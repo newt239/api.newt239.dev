@@ -1,3 +1,8 @@
 name = "hono-app"
 main = "src/index.ts"
 compatibility_date = "2022-12-11"
+
+[[ d1_databases ]]
+binding = "DB"
+database_name = "line-bot-message"
+database_id = "b6fd750a-9701-43a9-bfce-f2db0838c02d"

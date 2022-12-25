@@ -1,6 +1,5 @@
 import { Hono } from "hono";
-
-const spotify = new Hono();
+import { cors } from "hono/cors";
 
 type SpotifyMyTopTrackProps = {
   name: string;
@@ -19,6 +18,9 @@ type SpotifyMyTopTrackProps = {
     spotify: string;
   };
 };
+
+const spotify = new Hono();
+spotify.use("*", cors());
 
 spotify.get("/my-top-tracks", async (c) => {
   const SPOTIFY_CLIENT_ID: string = c.env.SPOTIFY_CLIENT_ID;

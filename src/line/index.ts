@@ -4,9 +4,10 @@ import {
   WebhookEvent,
 } from "@line/bot-sdk";
 import { Hono } from "hono";
-import { Configuration, OpenAIApi } from "openai";
 
+import { OpenAI } from "../openai";
 import { LineWebhookRequest } from "../types";
+
 const line = new Hono();
 
 line.post("/webhook", async (c) => {
@@ -39,29 +40,20 @@ const textEventHandler = async (
   if (event.type !== "message" || event.message.type !== "text") {
     return;
   }
-
-  const configuration = new Configuration({
-    apiKey: openaiSecret,
-  });
-  const openai = new OpenAIApi(configuration);
-  const result = await openai.createCompletion({
-    model: "text-davinci-003",
-    prompt: event.message.text,
-    temperature: 0.3,
-    max_tokens: 500,
-    top_p: 1.0,
-    frequency_penalty: 0.0,
-    presence_penalty: 0.0,
-  });
-
-  const response: TextMessage = {
+  const openaiClient = new OpenAI(openaiSecret);
+  const generatedMessage = await openaiClient.generateMessage(
+    event.message.text
+  );
+  const reply: TextMessage = {
     type: "text",
-    text: result.data.choices[0].text || "何らかのエラーが発生しました。",
+    text:
+      generatedMessage ||
+      "何らかのエラーによりメッセージを生成できませんでした。",
   };
   await fetch("https://api.line.me/v2/bot/message/reply", {
     body: JSON.stringify({
       replyToken: event.replyToken,
-      messages: [response],
+      messages: [reply],
     }),
     method: "POST",
     headers: {

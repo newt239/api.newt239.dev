@@ -3,11 +3,11 @@
 ## develop
 
 ```
-npm run start
+yarn start
 ```
 
 ## deploy
 
 ```
-npm run deploy
+yarn deploy
 ```

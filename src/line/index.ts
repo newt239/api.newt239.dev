@@ -4,17 +4,18 @@ import {
   WebhookEvent,
 } from "@line/bot-sdk";
 import { Hono } from "hono";
+import { Bindings } from "hono/dist/types/types";
 
 import { OpenAI } from "../openai";
 import { LineWebhookRequest } from "../types";
 
-const line = new Hono();
+const line = new Hono<{ Bindings: Bindings }>();
 
 line.post("/webhook", async (c) => {
   const data: LineWebhookRequest = await c.req.json();
   const events: WebhookEvent[] = data.events;
-  const accessToken: string = c.env.CHANNEL_ACCESS_TOKEN;
-  const openaiSecret: string = c.env.OPENAI_SECRET;
+  const accessToken = c.env.CHANNEL_ACCESS_TOKEN as string;
+  const openaiSecret = c.env.OPENAI_SECRET as string;
   await Promise.all(
     events.map(async (event: WebhookEvent) => {
       try {

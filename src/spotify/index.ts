@@ -19,7 +19,13 @@ type SpotifyMyTopTrackProps = {
   };
 };
 
-const spotify = new Hono();
+type Bindings = {
+  SPOTIFY_CLIENT_ID: string;
+  SPOTIFY_CLIENT_SECRET: string;
+  REFRESH_TOKEN: string;
+};
+
+const spotify = new Hono<{ Bindings: Bindings }>();
 spotify.use("*", cors());
 
 spotify.get("/my-top-tracks", async (c) => {

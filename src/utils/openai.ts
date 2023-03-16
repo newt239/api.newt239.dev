@@ -1,8 +1,9 @@
-import { OpenAiApiResponse } from "../types";
+import { OpenAIApiRequest, OpenAiApiResponse } from "../types/openai";
 
 export class OpenAI {
   private readonly headers: Record<string, string>;
   private readonly baseUrl = "https://api.openai.com";
+
   constructor(apiKey: string) {
     this.headers = {
       authorization: `Bearer ${apiKey}`,
@@ -10,14 +11,12 @@ export class OpenAI {
     };
   }
 
-  public async generateMessage(message: string): Promise<string | undefined> {
+  public async createCompletion({ model, messages }: OpenAIApiRequest) {
     const data = JSON.stringify({
-      prompt: message,
-      model: "text-davinci-003",
-      max_tokens: 50,
-      stop: "\n",
+      model,
+      messages,
     });
-    const apiResp = await fetch(`${this.baseUrl}/v1/completions`, {
+    const apiResp = await fetch(`${this.baseUrl}/v1/chat/completions`, {
       method: "POST",
       headers: this.headers,
       body: data,
@@ -29,7 +28,6 @@ export class OpenAI {
       });
     console.log(`apiResp: ${JSON.stringify(apiResp)}`);
     if (!apiResp) return "";
-
-    return apiResp.choices.map((choice) => choice.text.trim())[0];
+    return apiResp;
   }
 }

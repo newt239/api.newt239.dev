@@ -7,7 +7,7 @@
     "deploy": "wrangler publish"
   },
   "dependencies": {
-    "@cloudflare/puppeteer": "^0.0.0-alpha.1",
+    "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "axios": "^1.2.1",
     "hono": "3.0.0",
     "openai": "^3.1.0",

@@ -1,4 +1,7 @@
+import type { Database } from "@cloudflare/d1";
+
 export type Bindings = {
+  DB: Database;
   CHANNEL_ACCESS_TOKEN: string;
   REFRESH_TOKEN: string;
   SPOTIFY_CLIENT_ID: string;

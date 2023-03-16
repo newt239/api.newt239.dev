@@ -1,5 +1,8 @@
 export type Conversation = {
   id: number;
-  role: string;
+  user_id: string;
+  session_id: string;
+  role: "user" | "assistant" | "system";
   message: string;
+  timestamp: string;
 };

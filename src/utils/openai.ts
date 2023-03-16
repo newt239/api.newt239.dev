@@ -26,8 +26,6 @@ export class OpenAI {
         console.log(`OpenAI API error: ${err}`);
         return null;
       });
-    console.log(`apiResp: ${JSON.stringify(apiResp)}`);
-    if (!apiResp) return "";
     return apiResp;
   }
 }

@@ -3,21 +3,26 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "wrangler dev",
+    "dev": "wrangler dev --local --persist",
     "deploy": "wrangler publish"
   },
   "dependencies": {
+    "@cloudflare/d1": "^1.4.1",
     "@vespaiach/axios-fetch-adapter": "^0.3.1",
     "axios": "^1.2.1",
     "hono": "3.0.0",
     "openai": "^3.1.0",
-    "prettier": "^2.8.1"
+    "prettier": "^2.8.1",
+    "workers-qb": "^0.1.7"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20221111.1",
+    "@databases/split-sql-query": "1.0.3",
+    "@databases/sql": "3.2.0",
     "@line/bot-sdk": "^7.5.2",
     "@typescript-eslint/eslint-plugin": "^5.46.0",
     "@typescript-eslint/parser": "^5.46.0",
+    "better-sqlite3": "7.6.2",
     "eslint": "^8.29.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.26.0",

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { D1QB, OrderTypes } from "workers-qb";
+import { D1QB } from "workers-qb";
 
 import { Bindings } from "../../types/cloudflare-env";
 import { Conversation } from "../../types/d1";
@@ -14,8 +14,6 @@ openaiRoute.use("*", cors());
 openaiRoute.post("/gpt-3_5", async (c) => {
   const { message, user_id, session_id } =
     await c.req.json<OpenAIROuteRequestParams>();
-  console.log(user_id);
-  console.log(session_id);
   const userPrompt: OpenAIApiRequest["messages"][0] = {
     role: "user",
     content: message as string,
@@ -36,7 +34,6 @@ openaiRoute.post("/gpt-3_5", async (c) => {
       where: {
         conditions,
       },
-      orderBy: { timestamp: OrderTypes.DESC },
     });
     const results: Conversation[] = data.results
       ? (data.results as Conversation[])
@@ -46,10 +43,13 @@ openaiRoute.post("/gpt-3_5", async (c) => {
     });
   }
 
+  const messages = [...histories, userPrompt];
+  console.log(messages);
+
   const openaiClient = new OpenAI(c.env.OPENAI_API_KEY);
   const completion = await openaiClient.createCompletion({
     model: "gpt-3.5-turbo",
-    messages: [...histories, userPrompt],
+    messages,
   });
   if (completion) {
     await qb.insert({
@@ -69,7 +69,7 @@ openaiRoute.post("/gpt-3_5", async (c) => {
         },
       ],
     });
-    console.log(completion);
+    console.log(completion.choices[0].message.content);
     return c.json(completion);
   }
   return c.json(completion);

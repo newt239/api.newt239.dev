@@ -3,13 +3,13 @@
 ## develop
 
 ```
-yarn start
+pnpm dev
 ```
 
 ## deploy
 
 ```
-yarn deploy
+pnpm run deploy
 ```
 
 ## update d1 scheme

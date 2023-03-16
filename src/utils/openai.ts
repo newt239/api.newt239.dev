@@ -24,7 +24,7 @@ export class OpenAI {
       .then((res): Promise<OpenAiApiResponse> => res.json())
       .catch((err) => {
         console.log(`OpenAI API error: ${err}`);
-        return null;
+        return JSON.stringify(err);
       });
     return apiResp;
   }

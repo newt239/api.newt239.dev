@@ -51,7 +51,7 @@ openaiRoute.post("/gpt-3_5", async (c) => {
     model: "gpt-3.5-turbo",
     messages,
   });
-  if (completion) {
+  if (typeof completion !== "string") {
     await qb.insert({
       tableName: "conversations",
       data: [

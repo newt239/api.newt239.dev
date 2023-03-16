@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev --local --persist",
-    "deploy": "wrangler publish"
+    "publish": "wrangler publish"
   },
   "dependencies": {
     "@cloudflare/d1": "^1.4.1",

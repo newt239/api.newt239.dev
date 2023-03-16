@@ -51,27 +51,34 @@ openaiRoute.post("/gpt-3_5", async (c) => {
     model: "gpt-3.5-turbo",
     messages,
   });
-  if (typeof completion !== "string") {
-    await qb.insert({
-      tableName: "conversations",
-      data: [
-        {
-          role: "user",
-          message,
-          user_id: user_id ? user_id : null,
-          session_id: session_id ? session_id : null,
-        },
-        {
-          role: "assistant",
-          message: completion.choices[0].message.content,
-          user_id: user_id ? user_id : null,
-          session_id: session_id ? session_id : null,
-        },
-      ],
-    });
-    console.log(completion.choices[0].message.content);
-    return c.json(completion);
+  console.log(completion);
+
+  try {
+    if (typeof completion !== "string") {
+      await qb.insert({
+        tableName: "conversations",
+        data: [
+          {
+            role: "user",
+            message,
+            user_id: user_id ? user_id : null,
+            session_id: session_id ? session_id : null,
+          },
+          {
+            role: "assistant",
+            message: completion.choices[0].message.content,
+            user_id: user_id ? user_id : null,
+            session_id: session_id ? session_id : null,
+          },
+        ],
+      });
+      console.log(completion.choices[0].message.content);
+      return c.json(completion);
+    }
+  } catch (e) {
+    console.log(e);
   }
+
   return c.json(completion);
 });
 

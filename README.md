@@ -9,7 +9,7 @@ pnpm dev
 ## deploy
 
 ```
-pnpm publish
+pnpm run publish
 ```
 
 ## update d1 scheme

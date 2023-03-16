@@ -5,7 +5,10 @@ import { D1QB } from "workers-qb";
 import { Bindings } from "../../types/cloudflare-env";
 import { Conversation } from "../../types/d1";
 import { OpenAIApiRequest } from "../../types/openai";
-import { OpenAIROuteRequestParams } from "../../types/route";
+import {
+  OpenAIChatRequestParams,
+  OpenAIChatWithLogsRequestParams,
+} from "../../types/route";
 import { OpenAI } from "../../utils/openai";
 
 const openaiRoute = new Hono<{ Bindings: Bindings }>();
@@ -13,7 +16,7 @@ openaiRoute.use("*", cors());
 
 openaiRoute.post("/gpt-3_5", async (c) => {
   const { message, user_id, session_id } =
-    await c.req.json<OpenAIROuteRequestParams>();
+    await c.req.json<OpenAIChatRequestParams>();
   const userPrompt: OpenAIApiRequest["messages"][0] = {
     role: "user",
     content: message as string,
@@ -79,6 +82,21 @@ openaiRoute.post("/gpt-3_5", async (c) => {
     console.log(e);
   }
 
+  return c.json(completion);
+});
+
+openaiRoute.post("/gpt-3_5-with-logs", async (c) => {
+  const { messages } = await c.req.json<OpenAIChatWithLogsRequestParams>();
+
+  console.log(messages);
+
+  const openaiClient = new OpenAI(c.env.OPENAI_API_KEY);
+  const completion = await openaiClient.createCompletion({
+    model: "gpt-3.5-turbo",
+    messages,
+  });
+
+  console.log(completion);
   return c.json(completion);
 });
 

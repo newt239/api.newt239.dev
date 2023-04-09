@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import { Bindings, SpotifyMyTopTrackProps } from "~/types/spotify";
+import { getSpotifyAccessToken } from "~/utils/spotify";
 
 const spotify = new Hono<{ Bindings: Bindings }>();
 spotify.use("*", cors());
@@ -11,7 +12,7 @@ spotify.get("/my-top-tracks", async (c) => {
   const SPOTIFY_CLIENT_SECRET: string = c.env.SPOTIFY_CLIENT_SECRET;
   const REFRESH_TOKEN: string = c.env.REFRESH_TOKEN;
 
-  const accessToken = await getAccessToken(
+  const accessToken = await getSpotifyAccessToken(
     SPOTIFY_CLIENT_ID,
     SPOTIFY_CLIENT_SECRET,
     REFRESH_TOKEN
@@ -54,36 +55,5 @@ spotify.get("/my-top-tracks", async (c) => {
   }
   return c.json(returnData);
 });
-
-const getAccessToken = async (
-  SPOTIFY_CLIENT_ID: string,
-  SPOTIFY_CLIENT_SECRET: string,
-  REFRESH_TOKEN: string
-) => {
-  const token = btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`);
-  const accessTokenRes = await fetch("https://accounts.spotify.com/api/token", {
-    method: "POST",
-    headers: {
-      Authorization: "Basic " + token,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: REFRESH_TOKEN,
-    }),
-  })
-    .then((res): Promise<{ access_token: string }> => {
-      return res.json();
-    })
-    .catch((err) => {
-      console.log(err);
-      return null;
-    });
-  if (accessTokenRes) {
-    return accessTokenRes.access_token;
-  } else {
-    return "";
-  }
-};
 
 export default spotify;

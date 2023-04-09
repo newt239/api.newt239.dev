@@ -1,5 +1,5 @@
-name="hono-app"
-main="src/index.ts"
+name="api"
+main="src/routes/index.ts"
 compatibility_date="2022-12-11"
 
 [[ d1_databases ]]

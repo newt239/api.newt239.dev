@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-import postRoute from "./post";
+import postRoute from "~/routes/lab/post";
 
 const lab = new Hono();
 

@@ -2,14 +2,14 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { D1QB } from "workers-qb";
 
-import { Bindings } from "../../types/cloudflare-env";
-import { Conversation } from "../../types/d1";
-import { OpenAIApiRequest } from "../../types/openai";
+import { Bindings } from "~/types/cloudflare-env";
+import { Conversation } from "~/types/d1";
+import { OpenAIApiRequest } from "~/types/openai";
 import {
   OpenAIChatRequestParams,
   OpenAIChatWithLogsRequestParams,
-} from "../../types/route";
-import { OpenAI } from "../../utils/openai";
+} from "~/types/route";
+import { OpenAI } from "~/utils/openai";
 
 const openaiRoute = new Hono<{ Bindings: Bindings }>();
 openaiRoute.use("*", cors());

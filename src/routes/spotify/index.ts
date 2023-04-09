@@ -1,29 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-type SpotifyMyTopTrackProps = {
-  name: string;
-  artists: {
-    name: string;
-  }[];
-  album: {
-    images: {
-      url: string;
-    }[];
-  };
-  preview_url?: string;
-  duration_ms: number;
-  popularity: number;
-  external_urls: {
-    spotify: string;
-  };
-};
-
-type Bindings = {
-  SPOTIFY_CLIENT_ID: string;
-  SPOTIFY_CLIENT_SECRET: string;
-  REFRESH_TOKEN: string;
-};
+import { Bindings, SpotifyMyTopTrackProps } from "~/types/spotify";
 
 const spotify = new Hono<{ Bindings: Bindings }>();
 spotify.use("*", cors());

@@ -1,4 +1,4 @@
-import { OpenAIApiRequest, OpenAiApiResponse } from "../types/openai";
+import { OpenAIApiRequest, OpenAiApiResponse } from "~/types/openai";
 
 export class OpenAI {
   private readonly headers: Record<string, string>;

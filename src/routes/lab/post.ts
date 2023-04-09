@@ -6,8 +6,10 @@ const postRoute = async (c: Context) => {
     userAgent: c.req.header("User-Agent"),
     ContentType: c.req.header("Content-Type"),
   };
+  const res = { body, header };
+  console.log(res);
 
-  return c.json({ body, header });
+  return c.json(res);
 };
 
 export default postRoute;

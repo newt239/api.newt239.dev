@@ -1,18 +1,13 @@
 import { RESTPostAPIApplicationCommandsJSONBody } from "discord-api-types/v10";
 
-export const AWW_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
-  name: "awwww",
-  description: "Drop some cuteness on this channel.",
-};
-
 export const INVITE_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
   name: "invite",
-  description: "Get an invite link to add the bot to your server",
+  description: "サーバーへの招待リンクを生成",
 };
 
 export const PJSEKAI_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
   name: "pjsekai",
-  description: "get pjsekai data",
+  description: "プロセカの画像を返すコマンド",
   options: [
     {
       name: "タイプ",
@@ -25,7 +20,6 @@ export const PJSEKAI_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
 };
 
 const commands: RESTPostAPIApplicationCommandsJSONBody[] = [
-  AWW_COMMAND,
   INVITE_COMMAND,
   PJSEKAI_COMMAND,
 ];

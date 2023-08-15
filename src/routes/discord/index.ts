@@ -10,11 +10,7 @@ import { cors } from "hono/cors";
 
 import registerPOSTRoute from "./register";
 
-import {
-  AWW_COMMAND,
-  INVITE_COMMAND,
-  PJSEKAI_COMMAND,
-} from "~/routes/discord/_commands";
+import { INVITE_COMMAND, PJSEKAI_COMMAND } from "~/routes/discord/_commands";
 import { Bindings } from "~/types/bindings";
 
 const discordRoute = new Hono<{ Bindings: Bindings }>();
@@ -46,17 +42,6 @@ discordRoute.post("/", async (c) => {
 
   if (interaction.type === InteractionType.ApplicationCommand) {
     switch (interaction.data.name.toLowerCase()) {
-      case AWW_COMMAND.name.toLowerCase(): {
-        console.log("handling cute request");
-        const cuteUrl =
-          "https://pbs.twimg.com/media/F3N_AKcaAAAHXpt?format=jpg&name=4096x4096";
-        return c.json<APIInteractionResponse>({
-          type: InteractionResponseType.ChannelMessageWithSource,
-          data: {
-            content: cuteUrl,
-          },
-        });
-      }
       case INVITE_COMMAND.name.toLowerCase(): {
         const applicationId = c.env.DISCORD_APPLICATION_ID;
         const INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${applicationId}&scope=applications.commands`;
@@ -69,25 +54,28 @@ discordRoute.post("/", async (c) => {
         });
       }
       case PJSEKAI_COMMAND.name.toLowerCase(): {
-        const cards: { assetbundleName: string; cardRarityType: string }[] =
-          await (
-            await fetch(
-              "https://sekai-world.github.io/sekai-master-db-diff/cards.json"
-            )
-          ).json();
-        const cardNames = cards
-          .filter(
-            (card) =>
-              card.cardRarityType !== "rarity_1" &&
-              card.cardRarityType !== "rarity_2"
+        const cards: {
+          id: string;
+          prefix: string;
+          assetbundleName: string;
+          cardRarityType: string;
+        }[] = await (
+          await fetch(
+            "https://sekai-world.github.io/sekai-master-db-diff/cards.json"
           )
-          .map((card) => card.assetbundleName);
-        const n = Math.floor(Math.random() * cardNames.length);
-        const imageUrl = `https://storage.sekai.best/sekai-assets/character/member_small/${cardNames[n]}_rip/card_after_training.webp`;
+        ).json();
+        const filteredCards = cards.filter(
+          (card) =>
+            card.cardRarityType !== "rarity_1" &&
+            card.cardRarityType !== "rarity_2"
+        );
+        const n = Math.floor(Math.random() * filteredCards.length);
+        const card = filteredCards[n];
+        const imageUrl = `https://storage.sekai.best/sekai-assets/character/member_small/${card.assetbundleName}_rip/card_after_training.webp`;
         return c.json<APIInteractionResponse>({
           type: InteractionResponseType.ChannelMessageWithSource,
           data: {
-            content: imageUrl,
+            content: `[${card.prefix}](https://sekai.best/card/${card.id})\n\n${imageUrl}`,
           },
         });
       }

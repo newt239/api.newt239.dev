@@ -8,13 +8,17 @@
   },
   "dependencies": {
     "@cloudflare/d1": "^1.4.1",
+    "discord-interactions": "^3.4.0",
     "hono": "3.4.3",
+    "node-fetch": "^3.3.2",
     "workers-qb": "^1.1.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230814.0",
+    "@types/node": "^20.5.0",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
+    "discord-api-types": "^0.37.53",
     "eslint": "^8.29.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.26.0",

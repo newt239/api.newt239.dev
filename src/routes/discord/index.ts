@@ -69,13 +69,21 @@ discordRoute.post("/", async (c) => {
         });
       }
       case PJSEKAI_COMMAND.name.toLowerCase(): {
-        const playerNo = Math.floor(Math.random() * (26 - 1) + 1)
-          .toString()
-          .padStart(3, "0");
-        const cardNo = Math.floor(Math.random() * (20 - 1) + 1)
-          .toString()
-          .padStart(3, "0");
-        const imageUrl = `https://storage.sekai.best/sekai-assets/character/member_small/res${playerNo}_no${cardNo}_rip/card_after_training.webp`;
+        const cards: { assetbundleName: string; cardRarityType: string }[] =
+          await (
+            await fetch(
+              "https://sekai-world.github.io/sekai-master-db-diff/cards.json"
+            )
+          ).json();
+        const cardNames = cards
+          .filter(
+            (card) =>
+              card.cardRarityType !== "rarity_1" &&
+              card.cardRarityType !== "rarity_2"
+          )
+          .map((card) => card.assetbundleName);
+        const n = Math.floor(Math.random() * cardNames.length);
+        const imageUrl = `https://storage.sekai.best/sekai-assets/character/member_small/${cardNames[n]}_rip/card_after_training.webp`;
         return c.json<APIInteractionResponse>({
           type: InteractionResponseType.ChannelMessageWithSource,
           data: {

@@ -9,7 +9,6 @@
   "dependencies": {
     "@cloudflare/d1": "^1.4.1",
     "hono": "3.4.3",
-    "openai": "^3.3.0",
     "workers-qb": "^1.1.0"
   },
   "devDependencies": {

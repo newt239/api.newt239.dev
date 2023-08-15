@@ -4,10 +4,10 @@ import { cors } from "hono/cors";
 import { Bindings, SpotifyMyTopTrackProps } from "~/types/spotify";
 import { getSpotifyAccessToken } from "~/utils/spotify";
 
-const spotify = new Hono<{ Bindings: Bindings }>();
-spotify.use("*", cors());
+const spotifyRoute = new Hono<{ Bindings: Bindings }>();
+spotifyRoute.use("*", cors());
 
-spotify.get("/my-top-tracks", async (c) => {
+spotifyRoute.get("/my-top-tracks", async (c) => {
   const SPOTIFY_CLIENT_ID: string = c.env.SPOTIFY_CLIENT_ID;
   const SPOTIFY_CLIENT_SECRET: string = c.env.SPOTIFY_CLIENT_SECRET;
   const REFRESH_TOKEN: string = c.env.REFRESH_TOKEN;
@@ -56,4 +56,4 @@ spotify.get("/my-top-tracks", async (c) => {
   return c.json(returnData);
 });
 
-export default spotify;
+export default spotifyRoute;

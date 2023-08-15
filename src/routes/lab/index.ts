@@ -3,10 +3,10 @@ import { cors } from "hono/cors";
 
 import postRoute from "~/routes/lab/post";
 
-const lab = new Hono();
+const labRoute = new Hono();
 
-lab.use("*", cors());
+labRoute.use("*", cors());
 
-lab.post("/post", postRoute);
+labRoute.post("/post", postRoute);
 
-export default lab;
+export default labRoute;

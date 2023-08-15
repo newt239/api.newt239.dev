@@ -10,7 +10,11 @@ import { cors } from "hono/cors";
 
 import registerPOSTRoute from "./register";
 
-import { INVITE_COMMAND, PJSEKAI_COMMAND } from "~/routes/discord/_commands";
+import {
+  BANDORI_COMMAND,
+  INVITE_COMMAND,
+  PJSEKAI_COMMAND,
+} from "~/routes/discord/_commands";
 import { Bindings } from "~/types/bindings";
 
 const discordRoute = new Hono<{ Bindings: Bindings }>();
@@ -75,7 +79,35 @@ discordRoute.post("/", async (c) => {
         return c.json<APIInteractionResponse>({
           type: InteractionResponseType.ChannelMessageWithSource,
           data: {
-            content: `[${card.prefix}](https://sekai.best/card/${card.id})\n\n${imageUrl}`,
+            content: `${card.prefix}\n\n${imageUrl}`,
+          },
+        });
+      }
+      case BANDORI_COMMAND.name.toLowerCase(): {
+        const data: {
+          [key: string]: {
+            rarity: number;
+            resourceSetName: string;
+            prefix: string[];
+          };
+        } = await (
+          await fetch("https://bestdori.com/api/cards/all.5.json")
+        ).json();
+        const filteredCards = Object.entries(data)
+          .map(([id, value]) => {
+            return {
+              id,
+              ...value,
+            };
+          })
+          .filter((card) => card.rarity > 2);
+        const n = Math.floor(Math.random() * filteredCards.length);
+        const card = filteredCards[n];
+        const imageUrl = `https://bestdori.com/assets/jp/characters/resourceset/${card.resourceSetName}_rip/card_after_training.png`;
+        return c.json<APIInteractionResponse>({
+          type: InteractionResponseType.ChannelMessageWithSource,
+          data: {
+            content: `${card.prefix}\n\n${imageUrl}`,
           },
         });
       }

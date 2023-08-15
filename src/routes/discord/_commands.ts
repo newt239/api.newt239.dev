@@ -19,9 +19,24 @@ export const PJSEKAI_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
   ],
 };
 
+export const BANDORI_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
+  name: "bandori",
+  description: "バンドリの画像を返すコマンド",
+  options: [
+    {
+      name: "タイプ",
+      type: 3,
+      choices: [{ name: "カード", value: "card" }],
+      required: true,
+      description: "表示する画像の種類",
+    },
+  ],
+};
+
 const commands: RESTPostAPIApplicationCommandsJSONBody[] = [
   INVITE_COMMAND,
   PJSEKAI_COMMAND,
+  BANDORI_COMMAND,
 ];
 
 export default commands;

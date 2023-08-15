@@ -10,7 +10,11 @@ import { cors } from "hono/cors";
 
 import registerPOSTRoute from "./register";
 
-import { AWW_COMMAND, INVITE_COMMAND } from "~/routes/discord/_commands";
+import {
+  AWW_COMMAND,
+  INVITE_COMMAND,
+  PJSEKAI_COMMAND,
+} from "~/routes/discord/_commands";
 import { Bindings } from "~/types/bindings";
 
 const discordRoute = new Hono<{ Bindings: Bindings }>();
@@ -64,6 +68,21 @@ discordRoute.post("/", async (c) => {
           },
         });
       }
+      case PJSEKAI_COMMAND.name.toLowerCase(): {
+        const playerNo = Math.floor(Math.random() * (26 - 1) + 1)
+          .toString()
+          .padStart(3, "0");
+        const cardNo = Math.floor(Math.random() * (20 - 1) + 1)
+          .toString()
+          .padStart(3, "0");
+        const imageUrl = `https://storage.sekai.best/sekai-assets/character/member_small/res${playerNo}_no${cardNo}_rip/card_after_training.webp`;
+        return c.json<APIInteractionResponse>({
+          type: InteractionResponseType.ChannelMessageWithSource,
+          data: {
+            content: imageUrl,
+          },
+        });
+      }
       default:
         console.error("Unknown Command");
         return c.json(
@@ -85,5 +104,21 @@ discordRoute.post("/", async (c) => {
 });
 
 discordRoute.post("/register", registerPOSTRoute);
+
+discordRoute.get("/commands", async (c) => {
+  const token = c.env.DISCORD_TOKEN;
+  const applicationId = c.env.DISCORD_APPLICATION_ID;
+  const url = `https://discord.com/api/v10/applications/${applicationId}/commands`;
+
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bot ${token}`,
+    },
+    method: "GET",
+  });
+
+  return c.json(await response.json());
+});
 
 export default discordRoute;

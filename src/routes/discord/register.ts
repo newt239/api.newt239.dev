@@ -1,3 +1,4 @@
+import { RESTPutAPIApplicationCommandsResult } from "discord-api-types/v10";
 import { H } from "hono/dist/types/types";
 
 import commands from "~/routes/discord/_commands";
@@ -17,10 +18,13 @@ const registerPOSTRoute: H<{ Bindings: Bindings }> = async (c) => {
     body: JSON.stringify(commands),
   });
 
+  const data: RESTPutAPIApplicationCommandsResult = await response.json();
+
   if (response.ok) {
     return c.json({
       type: "success",
       message: "Registered all commands",
+      data,
     });
   } else {
     const text = await response.text();

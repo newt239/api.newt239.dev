@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-import { Bindings, SpotifyMyTopTrackProps } from "~/types/spotify";
+import { Bindings } from "~/types/bindings";
+import { SpotifyMyTopTrackProps } from "~/types/spotify";
 import { getSpotifyAccessToken } from "~/utils/spotify";
 
 const spotifyRoute = new Hono<{ Bindings: Bindings }>();

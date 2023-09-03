@@ -45,6 +45,9 @@ export const createMusicPageOnNotion = async (
           },
         ],
       },
+      URL: {
+        url: props.url,
+      },
     },
     children: descriptionParagraph,
     icon: {
@@ -61,5 +64,5 @@ export const createMusicPageOnNotion = async (
     },
   } as CreatePageParameters;
   const res = await notion.pages.create(params);
-  return res.id;
+  return res;
 };

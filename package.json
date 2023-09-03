@@ -19,7 +19,7 @@
     "@types/node": "^20.5.0",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
-    "discord-api-types": "^0.37.53",
+    "discord-api-types": "^0.37.56",
     "eslint": "^8.29.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.26.0",

@@ -35,8 +35,8 @@ devDependencies:
     specifier: ^5.57.1
     version: 5.57.1(eslint@8.29.0)(typescript@5.1.6)
   discord-api-types:
-    specifier: ^0.37.53
-    version: 0.37.53
+    specifier: ^0.37.56
+    version: 0.37.56
   eslint:
     specifier: ^8.29.0
     version: 8.29.0
@@ -1832,8 +1832,8 @@ packages:
       path-type: 4.0.0
     dev: true
 
-  /discord-api-types@0.37.53:
-    resolution: {integrity: sha512-N6uUgv50OyP981Mfxrrt0uxcqiaNr0BDaQIoqfk+3zM2JpZtwU9v7ce1uaFAP53b2xSDvcbrk80Kneui6XJgGg==}
+  /discord-api-types@0.37.56:
+    resolution: {integrity: sha512-Ih3wj0ZTaQxaJRqUEXHMIXfXB86bwMGC0wc2nNsyCJqeo3lC4qnxXtFIsC+IGI46+dSIinuayCAZ6sLEEM02Bw==}
     dev: true
 
   /discord-interactions@3.4.0:

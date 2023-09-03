@@ -47,7 +47,7 @@ discordRoute.post("/", async (c) => {
     });
   }
 
-  if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+  if (interaction.type === InteractionType.ApplicationCommand) {
     switch (interaction.data.name.toLowerCase()) {
       case INVITE_COMMAND.name.toLowerCase(): {
         const applicationId = c.env.DISCORD_APPLICATION_ID;
@@ -61,37 +61,30 @@ discordRoute.post("/", async (c) => {
         });
       }
       case NOTION_COMMAND.name.toLowerCase(): {
-        if (interaction.data.options[0].type === 3) {
-          const urlObject = new URLSearchParams(
-            interaction.data.options[0].value
-          );
-          const videoId = urlObject.get("v");
-          if (!videoId) {
-            return c.json<APIInteractionResponse>({
-              type: InteractionResponseType.ChannelMessageWithSource,
-              data: {
-                content: "無効なURLです",
-              },
-            });
-          }
-          const video = await getVideoInfo(videoId, c.env.YOUTUBE_API_KEY);
-          if (video) {
-            const response = await createMusicPageOnNotion(
-              c.env.NOTION_API_KEY,
-              c.env.NOTION_MUSIC_DB_ID,
-              {
-                title: video.title,
-                url: videoId,
-                description: video.description,
-                cover: video.thumbnail,
-              }
-            );
-            return c.json<APIInteractionResponse>({
-              type: InteractionResponseType.ChannelMessageWithSource,
-              data: {
-                content: `Notionに追加しました\n + ${response}`,
-              },
-            });
+        if (
+          interaction.data.options[0].type === InteractionType.MessageComponent
+        ) {
+          const videoId = interaction.data.options[0].value.split("v=")[1];
+          if (videoId) {
+            const video = await getVideoInfo(videoId, c.env.YOUTUBE_API_KEY);
+            if (video) {
+              const res = await createMusicPageOnNotion(
+                c.env.NOTION_API_KEY,
+                c.env.NOTION_MUSIC_DB_ID,
+                {
+                  title: video.title,
+                  url: videoId,
+                  description: video.description,
+                  cover: video.thumbnail,
+                }
+              );
+              return c.json<APIInteractionResponse>({
+                type: InteractionResponseType.ChannelMessageWithSource,
+                data: {
+                  content: `Notionに追加しました\n${res.url}`,
+                },
+              });
+            }
           }
         }
         return c.json<APIInteractionResponse>({

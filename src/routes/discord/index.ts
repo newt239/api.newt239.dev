@@ -89,7 +89,7 @@ discordRoute.post("/", async (c) => {
             return c.json<APIInteractionResponse>({
               type: InteractionResponseType.ChannelMessageWithSource,
               data: {
-                content: `Notionに追加しました\n + ${response.id}`,
+                content: `Notionに追加しました\n + ${response}`,
               },
             });
           }

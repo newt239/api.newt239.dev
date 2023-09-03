@@ -33,7 +33,6 @@ export const createMusicPageOnNotion = async (
       },
     });
   }
-  console.log(descriptionParagraph);
   const params = {
     parent: { database_id: dbId },
     properties: {
@@ -61,8 +60,6 @@ export const createMusicPageOnNotion = async (
       },
     },
   } as CreatePageParameters;
-  console.log(params);
   const res = await notion.pages.create(params);
-  console.log(res);
-  return res;
+  return res.id;
 };

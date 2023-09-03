@@ -1,8 +1,3 @@
 name="api"
 main="src/routes/index.ts"
 compatibility_date="2022-12-11"
-
-[[ d1_databases ]]
-binding = "DB" # i.e. available in your Worker on env.DB
-database_name = "api.newt239.dev"
-database_id = "e113d051-3c05-4e46-afa4-577b4ce2adbe"

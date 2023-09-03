@@ -4,19 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev --local --persist",
-    "publish": "wrangler publish"
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
-    "@cloudflare/d1": "^1.4.1",
-    "@googleapis/youtube": "^11.0.0",
     "@notionhq/client": "^2.2.11",
     "discord-interactions": "^3.4.0",
-    "hono": "3.4.3",
-    "node-fetch": "^3.3.2",
-    "workers-qb": "^1.1.0"
+    "hono": "3.5.7",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20230814.0",
+    "@cloudflare/workers-types": "^4.20230821.0",
     "@types/node": "^20.5.0",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
@@ -27,6 +24,6 @@
     "eslint-plugin-unused-imports": "^2.0.0",
     "prettier": "^3.0.1",
     "typescript": "^5.1.6",
-    "wrangler": "3.5.0"
+    "wrangler": "3.6.0"
   }
 }

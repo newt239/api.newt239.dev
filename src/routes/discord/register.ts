@@ -17,10 +17,9 @@ const registerPOSTRoute: H<{ Bindings: Bindings }> = async (c) => {
     method: "PUT",
     body: JSON.stringify(commands),
   });
-
-  const data: RESTPutAPIApplicationCommandsResult = await response.json();
-
+  console.log(response);
   if (response.ok) {
+    const data: RESTPutAPIApplicationCommandsResult = await response.json();
     return c.json({
       type: "success",
       message: "Registered all commands",

@@ -10,10 +10,10 @@ export const NOTION_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
   description: "NotionのMusic DBに追加",
   options: [
     {
-      name: "URL",
+      name: "url",
       type: 3,
       required: true,
-      description: "動画のURL",
+      description: "新たに保存したいYoutubeの動画のURL",
     },
   ],
 };
@@ -23,7 +23,7 @@ export const PJSEKAI_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
   description: "プロセカの画像を返すコマンド",
   options: [
     {
-      name: "タイプ",
+      name: "type",
       type: 3,
       choices: [{ name: "カード", value: "card" }],
       required: true,
@@ -37,7 +37,7 @@ export const BANDORI_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
   description: "バンドリの画像を返すコマンド",
   options: [
     {
-      name: "タイプ",
+      name: "type",
       type: 3,
       choices: [{ name: "カード", value: "card" }],
       required: true,

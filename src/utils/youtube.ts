@@ -1,7 +1,7 @@
 import { YoutubeGetVideosResponse, YoutubeThumbnails } from "~/types/youtube";
 
-export const getVideoInfo = async (videoId: string) => {
-  const url = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${process.env.YOUTUBE_API_KEY}&part=snippet,contentDetails,statistics`;
+export const getVideoInfo = async (videoId: string, apiKey: string) => {
+  const url = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,contentDetails,statistics`;
   const response: YoutubeGetVideosResponse = await (await fetch(url)).json();
   if (response.items && response.items[0]) {
     const snippet = response.items[0].snippet;
@@ -17,9 +17,7 @@ export const getVideoInfo = async (videoId: string) => {
   }
 };
 
-export const getLargestYoutubeThumbnailURL = (
-  thumbnails: YoutubeThumbnails
-) => {
+const getLargestYoutubeThumbnailURL = (thumbnails: YoutubeThumbnails) => {
   if (thumbnails.maxres) {
     return thumbnails.maxres.url;
   } else if (thumbnails.standard) {

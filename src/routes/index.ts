@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 
-import discordRoute from "./discord";
-
+import discordRoute from "~/routes/discord";
 import labRoute from "~/routes/lab";
 import spotifyRoute from "~/routes/spotify";
 

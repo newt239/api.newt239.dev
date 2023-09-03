@@ -6,21 +6,21 @@ export type YoutubeThumbnails = {
   };
 };
 
-export interface YoutubeGetVideosResponse {
+export type YoutubeGetVideosResponse = {
   kind: string;
   etag: string;
   items: Item[];
   pageInfo: PageInfo;
-}
+};
 
-export interface Item {
+interface Item {
   kind: string;
   etag: string;
   id: string;
   snippet: Snippet;
 }
 
-export interface Snippet {
+interface Snippet {
   publishedAt: string;
   channelId: string;
   title: string;
@@ -34,7 +34,7 @@ export interface Snippet {
   localized: Localized;
 }
 
-export interface Thumbnails {
+interface Thumbnails {
   default: Default;
   medium: Medium;
   high: High;
@@ -42,42 +42,42 @@ export interface Thumbnails {
   maxres: Maxres;
 }
 
-export interface Default {
+interface Default {
   url: string;
   width: number;
   height: number;
 }
 
-export interface Medium {
+interface Medium {
   url: string;
   width: number;
   height: number;
 }
 
-export interface High {
+interface High {
   url: string;
   width: number;
   height: number;
 }
 
-export interface Standard {
+interface Standard {
   url: string;
   width: number;
   height: number;
 }
 
-export interface Maxres {
+interface Maxres {
   url: string;
   width: number;
   height: number;
 }
 
-export interface Localized {
+interface Localized {
   title: string;
   description: string;
 }
 
-export interface PageInfo {
+interface PageInfo {
   totalResults: number;
   resultsPerPage: number;
 }

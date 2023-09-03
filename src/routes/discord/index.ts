@@ -67,8 +67,19 @@ discordRoute.post("/", async (c) => {
           auth: c.env.NOTION_API_KEY,
         });
         if (interaction.data.options[0].type === 3) {
-          const videoId = interaction.data.options[0].value.split(/?|@/)[1];
-          const video = await getVideoInfo(videoId);
+          const urlObject = new URLSearchParams(
+            interaction.data.options[0].value
+          );
+          const videoId = urlObject.get("v");
+          if (!videoId) {
+            return c.json<APIInteractionResponse>({
+              type: InteractionResponseType.ChannelMessageWithSource,
+              data: {
+                content: "無効なURLです",
+              },
+            });
+          }
+          const video = await getVideoInfo(videoId, c.env.YOUTUBE_API_KEY);
           const descriptionParagraph: ParagraphBlock[] = [];
           if (video) {
             for (const eachParagraph of video.description.split("\n\n")) {

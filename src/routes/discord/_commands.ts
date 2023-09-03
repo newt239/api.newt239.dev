@@ -13,7 +13,7 @@ export const NOTION_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
       name: "URL",
       type: 3,
       required: true,
-      description: "追加するURL",
+      description: "動画のURL",
     },
   ],
 };

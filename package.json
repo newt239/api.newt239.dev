@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "@cloudflare/d1": "^1.4.1",
+    "@googleapis/youtube": "^11.0.0",
+    "@notionhq/client": "^2.2.11",
     "discord-interactions": "^3.4.0",
     "hono": "3.4.3",
     "node-fetch": "^3.3.2",

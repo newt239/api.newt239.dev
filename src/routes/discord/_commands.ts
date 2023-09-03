@@ -5,6 +5,19 @@ export const INVITE_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
   description: "サーバーへの招待リンクを生成",
 };
 
+export const NOTION_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
+  name: "notion",
+  description: "NotionのMusic DBに追加",
+  options: [
+    {
+      name: "URL",
+      type: 3,
+      required: true,
+      description: "追加するURL",
+    },
+  ],
+};
+
 export const PJSEKAI_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
   name: "pjsekai",
   description: "プロセカの画像を返すコマンド",
@@ -35,6 +48,7 @@ export const BANDORI_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
 
 const commands: RESTPostAPIApplicationCommandsJSONBody[] = [
   INVITE_COMMAND,
+  NOTION_COMMAND,
   PJSEKAI_COMMAND,
   BANDORI_COMMAND,
 ];

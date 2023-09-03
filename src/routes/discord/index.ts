@@ -1,3 +1,5 @@
+import { Client } from "@notionhq/client";
+import { CreatePageParameters } from "@notionhq/client/build/src/api-endpoints";
 import {
   APIInteraction,
   APIInteractionResponse,
@@ -13,9 +15,12 @@ import registerPOSTRoute from "./register";
 import {
   BANDORI_COMMAND,
   INVITE_COMMAND,
+  NOTION_COMMAND,
   PJSEKAI_COMMAND,
 } from "~/routes/discord/_commands";
 import { Bindings } from "~/types/bindings";
+import { ParagraphBlock } from "~/types/notion";
+import { getVideoInfo } from "~/utils/youtube";
 
 const discordRoute = new Hono<{ Bindings: Bindings }>();
 
@@ -44,7 +49,7 @@ discordRoute.post("/", async (c) => {
     });
   }
 
-  if (interaction.type === InteractionType.ApplicationCommand) {
+  if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
     switch (interaction.data.name.toLowerCase()) {
       case INVITE_COMMAND.name.toLowerCase(): {
         const applicationId = c.env.DISCORD_APPLICATION_ID;
@@ -54,6 +59,79 @@ discordRoute.post("/", async (c) => {
           data: {
             content: INVITE_URL,
             flags: 64,
+          },
+        });
+      }
+      case NOTION_COMMAND.name.toLowerCase(): {
+        const notion = new Client({
+          auth: c.env.NOTION_API_KEY,
+        });
+        if (interaction.data.options[0].type === 3) {
+          const videoId = interaction.data.options[0].value.split(/?|@/)[1];
+          const video = await getVideoInfo(videoId);
+          const descriptionParagraph: ParagraphBlock[] = [];
+          if (video) {
+            for (const eachParagraph of video.description.split("\n\n")) {
+              descriptionParagraph.push({
+                type: "paragraph",
+                paragraph: {
+                  rich_text: [
+                    {
+                      type: "text",
+                      text: {
+                        content: eachParagraph + "\n",
+                        link: null,
+                      },
+                    },
+                  ],
+                },
+              });
+            }
+            const parameters: CreatePageParameters = {
+              parent: {
+                database_id: c.env.NOTION_MUSIC_DB_ID,
+              },
+              properties: {
+                Name: {
+                  title: [
+                    {
+                      text: {
+                        content: video.title,
+                      },
+                    },
+                  ],
+                },
+                URL: {
+                  url: "https://youtube.com/watch?v=" + video.id,
+                },
+              },
+              children: descriptionParagraph,
+              icon: {
+                type: "external",
+                external: {
+                  url: "https://www.youtube.com/s/desktop/e06db45c/img/favicon_144x144.png",
+                },
+              },
+              cover: {
+                type: "external",
+                external: {
+                  url: video.thumbnail,
+                },
+              },
+            } as CreatePageParameters;
+            const response = await notion.pages.create(parameters);
+            return c.json<APIInteractionResponse>({
+              type: InteractionResponseType.ChannelMessageWithSource,
+              data: {
+                content: `Notionに追加しました！\n + ${response.id}`,
+              },
+            });
+          }
+        }
+        return c.json<APIInteractionResponse>({
+          type: InteractionResponseType.ChannelMessageWithSource,
+          data: {
+            content: "エラーが発生しました",
           },
         });
       }

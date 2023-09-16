@@ -73,7 +73,7 @@ discordRoute.post("/", async (c) => {
                 c.env.NOTION_MUSIC_DB_ID,
                 {
                   title: video.title,
-                  url: videoId,
+                  url: `https://youtube.com/watch?v=${videoId}`,
                   description: video.description,
                   cover: video.thumbnail,
                 }

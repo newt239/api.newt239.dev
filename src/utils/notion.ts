@@ -2,6 +2,7 @@ import { Client } from "@notionhq/client";
 import { CreatePageParameters } from "@notionhq/client/build/src/api-endpoints";
 
 import { ParagraphBlock } from "~/types/notion";
+import { getPageTitleFromUrl } from "~/utils/general";
 
 export const createMusicPageOnNotion = async (
   apiKey: string,
@@ -63,6 +64,62 @@ export const createMusicPageOnNotion = async (
       },
     },
   } as CreatePageParameters;
+  const res = await notion.pages.create(params);
+  return res;
+};
+
+export const createBunkasaiPageOnNotion = async (
+  apiKey: string,
+  dbId: string,
+  props: {
+    url: string;
+    source_type: string;
+    year: number;
+    schoolType: string;
+  }
+) => {
+  const title = await getPageTitleFromUrl(props.url);
+  const notion = new Client({
+    auth: apiKey,
+  });
+  const params = {
+    parent: { database_id: dbId },
+    properties: {
+      名前: {
+        title: [
+          {
+            text: {
+              content: title || props.url,
+            },
+          },
+        ],
+      },
+      種別: {
+        select: {
+          name: props.source_type,
+        },
+      },
+      年度: {
+        number: props.year,
+      },
+      学校種別: {
+        select: {
+          name: props.schoolType,
+        },
+      },
+    },
+  } as CreatePageParameters;
+  const is_archive = props.url.includes("web.archive.org");
+  if (is_archive) {
+    params.properties.アーカイブ = {
+      url: props.url,
+    };
+  } else {
+    params.properties.リンク = {
+      url: props.url,
+    };
+  }
+  console.log(params);
   const res = await notion.pages.create(params);
   return res;
 };

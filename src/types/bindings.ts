@@ -7,5 +7,6 @@ export type Bindings = {
   DISCORD_APPLICATION_ID: string;
   NOTION_API_KEY: string;
   NOTION_MUSIC_DB_ID: string;
+  NOTION_BUNKASAI_DB_ID: string;
   YOUTUBE_API_KEY: string;
 };

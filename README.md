@@ -9,5 +9,5 @@ pnpm dev
 ## deploy
 
 ```
-pnpm run deploy
+npx wrangler deploy
 ```

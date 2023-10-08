@@ -18,7 +18,7 @@ import {
 } from "~/routes/discord/_commands";
 import { Bindings } from "~/types/bindings";
 import { createMusicPageOnNotion } from "~/utils/notion";
-import { getVideoInfo } from "~/utils/youtube";
+import { getVideoInfo, getYoutubeVideoId } from "~/utils/youtube";
 
 const discordRoute = new Hono<{ Bindings: Bindings }>();
 
@@ -64,7 +64,8 @@ discordRoute.post("/", async (c) => {
         if (
           interaction.data.options[0].type === InteractionType.MessageComponent
         ) {
-          const videoId = interaction.data.options[0].value.split("v=")[1];
+          const url = interaction.data.options[0].value as string;
+          const videoId = getYoutubeVideoId(url);
           if (videoId) {
             const video = await getVideoInfo(videoId, c.env.YOUTUBE_API_KEY);
             if (video) {

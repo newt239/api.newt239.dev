@@ -26,18 +26,12 @@ spotifyRoute.get("/my-top-tracks", async (c) => {
   const res = await fetch(
     "https://api.spotify.com/v1/me/top/tracks",
     requestOptions
-  )
-    .then((res): Promise<{ items: SpotifyMyTopTrackProps[] }> => {
-      return res.json();
-    })
-    .catch((err) => {
-      console.log(err);
-      return null;
-    });
+  );
+  const data = (await res.json()) as { items: SpotifyMyTopTrackProps[] };
 
   const returnData = [];
-  if (res) {
-    for (const track of res.items) {
+  if (data) {
+    for (const track of data.items) {
       const artists = [];
       for (const artist of track.artists) {
         artists.push(artist.name);

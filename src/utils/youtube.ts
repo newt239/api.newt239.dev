@@ -9,7 +9,9 @@ export const getYoutubeVideoId = (url: string) => {
 
 export const getVideoInfo = async (videoId: string, apiKey: string) => {
   const url = `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet,contentDetails,statistics`;
-  const response: YoutubeGetVideosResponse = await (await fetch(url)).json();
+  const response = (await (
+    await fetch(url)
+  ).json()) as YoutubeGetVideosResponse;
   if (response.items && response.items[0]) {
     const snippet = response.items[0].snippet;
     const data = {

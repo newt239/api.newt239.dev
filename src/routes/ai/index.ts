@@ -1,18 +1,26 @@
 import { Hono } from "hono";
+import { env } from 'hono/adapter'
 import { cors } from "hono/cors";
 import  OpenAI from "openai";
 
-type Bindings = {
-  OPENAI_API_KEY: string;
-};
+import { Bindings } from "~/types/bindings";
 
 const aiRoute = new Hono<{ Bindings: Bindings }>();
-aiRoute.use("*", cors());
+aiRoute.use("*", cors({
+    origin: ['https://newt239.dev', 'http://localhost:3000'],
+    allowHeaders: ['X-Custom-Header', 'Upgrade-Insecure-Requests', 'Content-Type'],
+    allowMethods: ['POST', 'GET', 'OPTIONS'],
+    exposeHeaders: ['Content-Length'],
+    maxAge: 600,
+    credentials: true,
+  }))
 
 aiRoute.post("/generate-theme", async (c) => {
-  const prompt = await c.req.text();
+  const { prompt } = await c.req.json();
+  const { OPENAI_API_KEY } = env(c);
+  console.log(OPENAI_API_KEY);
   const openai = new OpenAI({
-    apiKey: c.env.OPENAI_API_KEY,
+    apiKey: OPENAI_API_KEY,
   });
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -55,7 +63,7 @@ aiRoute.post("/generate-theme", async (c) => {
   if (!content) {
     return c.json({body: "[]"});
   }
-  
+  await c.env.DB.prepare("INSERT INTO themes (prompt, response) VALUES (?, ?)").bind(prompt, content).run();
   return c.json({body: content});
 });
 

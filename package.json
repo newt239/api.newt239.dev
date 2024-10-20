@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "wrangler dev --local --persist",
+    "dev": "wrangler dev --local",
     "deploy": "wrangler deploy"
   },
   "dependencies": {

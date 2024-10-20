@@ -20,6 +20,10 @@ wrangler deploy
 wrangler d1 execute newt239.dev --local --file=./db/schema.sql
 ```
 
+```bash
+wrangler d1 execute newt239.dev --local --command='SELECT * FROM themes'
+```
+
 ### remote
 
 ```bash

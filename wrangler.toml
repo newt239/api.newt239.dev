@@ -1,3 +1,0 @@
-name="api"
-main="src/routes/index.ts"
-compatibility_date="2022-12-11"

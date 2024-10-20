@@ -2,12 +2,26 @@
 
 ## develop
 
-```
+```bash
 pnpm dev
 ```
 
 ## deploy
 
+```bash
+wrangler deploy
 ```
-npx wrangler deploy
+
+## d1 migration
+
+### local
+
+```bash
+wrangler d1 execute newt239.dev --local --file=./db/schema.sql
+```
+
+### remote
+
+```bash
+wrangler d1 execute newt239.dev --remote --file=./db/schema.sql
 ```

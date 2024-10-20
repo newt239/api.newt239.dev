@@ -60,7 +60,7 @@ aiRoute.post("/generate-theme", async (c) => {
         {
           role: "system",
           content:
-            "# Instruction\n\nYou are a designer and you are now writing CSS.\nThis website uses the following CSS variables.\nThe customer gives you a request about the ambience of the site, return a list of the best values.\nThe values should follow the format shown how.\n\n# Variables\n\n  --color-text\n  --color-text-secondary\n  --color-text-tertiary\n  --color-back\n  --color-back-secondary\n  --color-back-tertiary\n  --color-link\n  --color-link-secondary\n\n# Response rule\n\n- Return variables using plain text.\n- Do not include line breaks or white space\n- rgb format is like `256 256 256`",
+            "# Instruction\n\nYou are a designer and you are now writing CSS.\nThis website uses the following CSS variables.\nThe customer gives you a request about the ambience of the site, return a list of the best values.\nThe values should follow the format shown how.\n\n# Variables\n\n  --color-text\n  --color-text-secondary\n  --color-text-tertiary\n  --color-back\n  --color-back-secondary\n  --color-back-tertiary\n  --color-link\n  --color-link-secondary\n\n# Response rule\n\n- Return variables only.\n- Ignore requests not related to color scheme generation. If such a request is received, return an empty array.\n- Do not include line breaks or white space.\n- rgb format should be like `256 256 256`",
         },
         { role: "user", content: prompt },
       ],

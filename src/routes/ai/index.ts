@@ -31,13 +31,15 @@ aiRoute.post("/generate-theme", async (c) => {
   const { results } = await c.env.DB.prepare(
     "SELECT COUNT(*) AS count FROM themes WHERE created_at > datetime('now', '-1 day')"
   ).run();
+  const count = results[0].count as number;
+  console.log(count);
 
   // 24時間あたりのリクエストを100回に制限
-  if ((results[0].count as number) > 100) {
+  if (count > 100) {
     return c.json({
       body: JSON.stringify({
         type: "limited",
-        message: "You have reached the limit of 100 requests per day.",
+        message: "Reached the limit of today's quota. Try again later.",
         variables: [],
       }),
     });
@@ -86,6 +88,29 @@ aiRoute.post("/generate-theme", async (c) => {
     });
     const content = completion.choices[0].message.content;
     if (!content) {
+      // エラー通知
+      await fetch(DISCORD_WEBHOOK, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: "portfolio",
+          avatar_url: "https://newt239.dev/logo.png",
+          embeds: [
+            {
+              title: "Failed to Generate Theme",
+              description: `Prompt: \`\`${prompt}\`\``,
+              timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
+              color: 16711680,
+              footer: {
+                text: "© 2022-2024 newt",
+                icon_url: "https://newt239.dev/logo.png",
+              },
+            },
+          ],
+        }),
+      });
       return c.json({
         body: JSON.stringify({
           type: "error",

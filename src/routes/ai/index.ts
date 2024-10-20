@@ -1,31 +1,45 @@
+import dayjs from "dayjs";
 import { Hono } from "hono";
-import { env } from 'hono/adapter'
+import { env } from "hono/adapter";
 import { cors } from "hono/cors";
-import  OpenAI from "openai";
+import OpenAI from "openai";
 
 import { Bindings } from "~/types/bindings";
 
 const aiRoute = new Hono<{ Bindings: Bindings }>();
-aiRoute.use("*", cors({
-    origin: ['https://newt239.dev', 'http://localhost:3000'],
-    allowHeaders: ['X-Custom-Header', 'Upgrade-Insecure-Requests', 'Content-Type'],
-    allowMethods: ['POST', 'GET', 'OPTIONS'],
-    exposeHeaders: ['Content-Length'],
+aiRoute.use(
+  "*",
+  cors({
+    origin: ["https://newt239.dev", "http://localhost:3000"],
+    allowHeaders: [
+      "X-Custom-Header",
+      "Upgrade-Insecure-Requests",
+      "Content-Type",
+    ],
+    allowMethods: ["POST", "GET", "OPTIONS"],
+    exposeHeaders: ["Content-Length"],
     maxAge: 600,
     credentials: true,
-  }))
+  })
+);
 
 aiRoute.post("/generate-theme", async (c) => {
-  const {results} = await c.env.DB.prepare("SELECT COUNT(*) AS count FROM themes WHERE created_at > datetime('now', '-1 day')").run();
-  if (results[0].count as number > 100) {
-    return c.json({body: JSON.stringify({
-      type: "limited",
-      message: "You have reached the limit of 100 requests per day.",
-      variables: []
-    })});
+  const { results } = await c.env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM themes WHERE created_at > datetime('now', '-1 day')"
+  ).run();
+
+  // 24時間あたりのリクエストを100回に制限
+  if ((results[0].count as number) > 100) {
+    return c.json({
+      body: JSON.stringify({
+        type: "limited",
+        message: "You have reached the limit of 100 requests per day.",
+        variables: [],
+      }),
+    });
   } else {
     const { prompt } = await c.req.json();
-    const { OPENAI_API_KEY } = env(c);
+    const { OPENAI_API_KEY, DISCORD_WEBHOOK } = env(c);
     const openai = new OpenAI({
       apiKey: OPENAI_API_KEY,
     });
@@ -68,18 +82,50 @@ aiRoute.post("/generate-theme", async (c) => {
     });
     const content = completion.choices[0].message.content;
     if (!content) {
-      return c.json({body: JSON.stringify({
-        type: "error",
-        message: "Failed to generate theme.",
-        variables: []
-      })});
+      return c.json({
+        body: JSON.stringify({
+          type: "error",
+          message: "Failed to generate theme.",
+          variables: [],
+        }),
+      });
     }
-    await c.env.DB.prepare("INSERT INTO themes (prompt, response) VALUES (?, ?)").bind(prompt, content).run();
-    return c.json({body: JSON.stringify({
-      type: "success",
-      message: "Successfully generated theme.",
-      variables: JSON.parse(content).variables
-    })});
+    // 結果をd1に保存
+    await c.env.DB.prepare(
+      "INSERT INTO themes (prompt, response) VALUES (?, ?)"
+    )
+      .bind(prompt, content)
+      .run();
+    // ディスコードに通知
+    await fetch(DISCORD_WEBHOOK, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: "portfolio",
+        avatar_url: "https://newt239.dev/logo.png",
+        embeds: [
+          {
+            title: "New Theme Generated",
+            description: `Prompt: ${prompt}\n\nResponse:\n\`\`\`\njson${content}\n\`\`\``,
+            timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
+            color: 2664261,
+            footer: {
+              text: "© 2022-2024 newt",
+              icon_url: "https://newt239.dev/logo.png",
+            },
+          },
+        ],
+      }),
+    });
+    return c.json({
+      body: JSON.stringify({
+        type: "success",
+        message: "Successfully generated theme.",
+        variables: JSON.parse(content).variables,
+      }),
+    });
   }
 });
 

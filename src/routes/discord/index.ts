@@ -221,8 +221,9 @@ discordRoute.get("/commands", async (c) => {
     },
     method: "GET",
   });
+  const data: object = await response.json();
 
-  return c.json(await response.json());
+  return c.json(data);
 });
 
 export default discordRoute;

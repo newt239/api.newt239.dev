@@ -10,11 +10,16 @@ const aiRoute = new Hono<{ Bindings: Bindings }>();
 aiRoute.use(
   "*",
   cors({
-    origin: [
-      "https://newt239.dev",
-      "https://*.newt239-dev.pages.dev",
-      "http://localhost:3000",
-    ],
+    origin: (origin) => {
+      const allowedOriginPatterns = [
+        /^https:\/\/.*\.newt239-dev\.pages\.dev$/,
+        /^http:\/\/localhost:\d+$/,
+      ];
+
+      return allowedOriginPatterns.some((pattern) => pattern.test(origin))
+        ? origin
+        : "https://newt239.dev";
+    },
     allowHeaders: [
       "X-Custom-Header",
       "Upgrade-Insecure-Requests",

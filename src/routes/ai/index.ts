@@ -10,14 +10,18 @@ const aiRoute = new Hono<{ Bindings: Bindings }>();
 aiRoute.use(
   "*",
   cors({
-    origin: ["https://newt239.dev", "http://localhost:3000"],
+    origin: [
+      "https://newt239.dev",
+      "https://*.newt239-dev.pages.dev",
+      "http://localhost:3000",
+    ],
     allowHeaders: [
       "X-Custom-Header",
       "Upgrade-Insecure-Requests",
       "Content-Type",
     ],
     allowMethods: ["POST", "GET", "OPTIONS"],
-    exposeHeaders: ["Content-Length"],
+    exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
     maxAge: 600,
     credentials: true,
   })
@@ -108,7 +112,7 @@ aiRoute.post("/generate-theme", async (c) => {
         embeds: [
           {
             title: "New Theme Generated",
-            description: `Prompt: ${prompt}\n\nResponse:\n\`\`\`\njson${content}\n\`\`\``,
+            description: `Prompt: \`\`${prompt}\`\`\n\nResponse:\n\`\`\`json\n${content}\n\`\`\``,
             timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
             color: 2664261,
             footer: {

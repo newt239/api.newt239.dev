@@ -105,6 +105,7 @@ aiRoute.post("/generate-theme", async (c) => {
     )
       .bind(prompt, content)
       .run();
+    const parsedContent: {[key: string] :string} = JSON.parse(content);
     // ディスコードに通知
     await fetch(DISCORD_WEBHOOK, {
       method: "POST",
@@ -117,7 +118,7 @@ aiRoute.post("/generate-theme", async (c) => {
         embeds: [
           {
             title: "New Theme Generated",
-            description: `Prompt: \`\`${prompt}\`\`\n\nResponse:\n\`\`\`json\n${content}\n\`\`\``,
+            description: `Prompt: \`\`${prompt}\`\`\n\nResponse:\n\`\`\`json\n${JSON.stringify(parsedContent, null, "\t")}\n\`\`\``,
             timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
             color: 2664261,
             footer: {
@@ -128,7 +129,6 @@ aiRoute.post("/generate-theme", async (c) => {
         ],
       }),
     });
-    const parsedContent: {[key: string] :string} = JSON.parse(content);
     return c.json({
       body: JSON.stringify({
         type: "success",

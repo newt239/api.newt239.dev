@@ -128,11 +128,15 @@ aiRoute.post("/generate-theme", async (c) => {
         ],
       }),
     });
+    const parsedContent: {[key: string] :string} = JSON.parse(content);
     return c.json({
       body: JSON.stringify({
         type: "success",
         message: "Successfully generated theme.",
-        variables: JSON.parse(content).variables,
+        variables: Object.entries(parsedContent).map(([name, value]) => ({
+          name,
+          value,
+        })),
       }),
     });
   }

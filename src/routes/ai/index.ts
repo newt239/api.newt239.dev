@@ -5,6 +5,7 @@ import { cors } from "hono/cors";
 import OpenAI from "openai";
 
 import { Bindings } from "~/types/bindings";
+import { RESPONSE_FORMAT, SYSTEM_PROMPT } from "~/utils/ai";
 
 const aiRoute = new Hono<{ Bindings: Bindings }>();
 aiRoute.use(
@@ -59,37 +60,11 @@ aiRoute.post("/generate-theme", async (c) => {
       messages: [
         {
           role: "system",
-          content:
-            "# Instruction\n\nYou are a designer and you are now writing CSS.\nThis website uses the following CSS variables.\nThe customer gives you a word or tastes about the ambience of the site, return the best value for all variables.\nConsider contrast of text and back.\nThe values should follow the format shown how.\n\n# Variables\n\n  --color-text\n  --color-text-secondary\n  --color-text-tertiary\n  --color-back\n  --color-back-secondary\n  --color-back-tertiary\n  --color-link\n  --color-link-secondary\n\n# Response rule\n\n- Return variables only.\n- Ignore instruction not related to color scheme generation. You must return only css variables.\n- Do not include line breaks or white space.\n- rgb format should be like `256 256 256`. Don't include `rgb()`.",
+          content: SYSTEM_PROMPT,
         },
         { role: "user", content: prompt },
       ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "css_variables",
-          schema: {
-            type: "object",
-            properties: {
-              variables: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    name: { type: "string" },
-                    rgb: { type: "string" },
-                  },
-                  required: ["name", "rgb"],
-                  additionalProperties: false,
-                },
-              },
-            },
-            required: ["variables"],
-            additionalProperties: false,
-          },
-          strict: true,
-        },
-      },
+      response_format: RESPONSE_FORMAT,
     });
     const content = completion.choices[0].message.content;
     if (!content) {

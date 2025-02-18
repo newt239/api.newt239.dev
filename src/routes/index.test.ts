@@ -4,7 +4,7 @@ import app from "./index";
 
 describe("Testing My App", () => {
   it("Should return 200 response", async () => {
-    const res = testClient(app);
+    const res = await testClient(app).index.$get();
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("🔥");
   });

@@ -1,10 +1,9 @@
 import {
-  APIInteraction,
-  APIInteractionResponse,
-  ApplicationCommandOptionType,
+  type APIInteraction,
+  type APIInteractionResponse,
   InteractionResponseType,
   InteractionType,
-} from "discord-api-types/v10";
+} from "discord-api-types/payloads/v10";
 import { verifyKey } from "discord-interactions";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -14,15 +13,9 @@ import registerPOSTRoute from "./register";
 import {
   BANDORI_COMMAND,
   INVITE_COMMAND,
-  NOTION_COMMAND,
   PJSEKAI_COMMAND,
 } from "~/routes/discord/_commands";
 import { Bindings } from "~/types/bindings";
-import {
-  createBunkasaiPageOnNotion,
-  createMusicPageOnNotion,
-} from "~/utils/notion";
-import { getVideoInfo, getYoutubeVideoId } from "~/utils/youtube";
 
 const discordRoute = new Hono<{ Bindings: Bindings }>();
 
@@ -50,8 +43,9 @@ discordRoute.post("/", async (c) => {
       type: InteractionResponseType.Pong,
     });
   }
+  console.log(interaction);
 
-  if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+  if (interaction.type === InteractionType.ApplicationCommand) {
     switch (interaction.data.name.toLowerCase()) {
       case INVITE_COMMAND.name.toLowerCase(): {
         const applicationId = c.env.DISCORD_APPLICATION_ID;
@@ -63,75 +57,6 @@ discordRoute.post("/", async (c) => {
             flags: 64,
           },
         });
-      }
-      case NOTION_COMMAND.name.toLowerCase(): {
-        const subCommand = interaction.data.options[0];
-        if (
-          subCommand.type === ApplicationCommandOptionType.Subcommand &&
-          subCommand.options
-        ) {
-          switch (subCommand.name.toLowerCase()) {
-            case "music": {
-              const url = subCommand.options[0].value as string;
-              const videoId = getYoutubeVideoId(url);
-              if (videoId) {
-                const video = await getVideoInfo(
-                  videoId,
-                  c.env.YOUTUBE_API_KEY
-                );
-                if (video) {
-                  const res = await createMusicPageOnNotion(
-                    c.env.NOTION_API_KEY,
-                    c.env.NOTION_MUSIC_DB_ID,
-                    {
-                      title: video.title,
-                      url: `https://youtube.com/watch?v=${videoId}`,
-                      description: video.description,
-                      cover: video.thumbnail,
-                    }
-                  );
-                  return c.json<APIInteractionResponse>({
-                    type: InteractionResponseType.ChannelMessageWithSource,
-                    data: {
-                      content: `🎵Music DBに追加しました！\n\nhttps://www.notion.so/${res.id}`,
-                    },
-                  });
-                }
-              }
-              break;
-            }
-            case "bunkasai": {
-              const url = subCommand.options[0].value as string;
-              const source_type = subCommand.options[1].value as string;
-              const year = subCommand.options[2].value as number;
-              const schoolType = subCommand.options[3].value as string;
-              const res = await createBunkasaiPageOnNotion(
-                c.env.NOTION_API_KEY,
-                c.env.NOTION_BUNKASAI_DB_ID,
-                {
-                  url,
-                  source_type,
-                  year,
-                  schoolType,
-                }
-              );
-              return c.json<APIInteractionResponse>({
-                type: InteractionResponseType.ChannelMessageWithSource,
-                data: {
-                  content: `🎆awesome-festival-tips DBに追加しました！\n\nhttps://www.notion.so/${res.id}`,
-                },
-              });
-            }
-          }
-
-          return c.json<APIInteractionResponse>({
-            type: InteractionResponseType.ChannelMessageWithSource,
-            data: {
-              content: "エラーが発生しました",
-            },
-          });
-        }
-        break;
       }
       case PJSEKAI_COMMAND.name.toLowerCase(): {
         const cards = (await (
@@ -151,7 +76,7 @@ discordRoute.post("/", async (c) => {
         );
         const n = Math.floor(Math.random() * filteredCards.length);
         const card = filteredCards[n];
-        const imageUrl = `https://storage.sekai.best/sekai-assets/character/member_small/${card.assetbundleName}_rip/card_after_training.webp`;
+        const imageUrl = `https://storage.sekai.best/sekai-jp-assets/character/member_small/${card.assetbundleName}_rip/card_after_training.webp`;
         return c.json<APIInteractionResponse>({
           type: InteractionResponseType.ChannelMessageWithSource,
           data: {

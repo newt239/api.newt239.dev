@@ -1,5 +1,6 @@
-import { RESTPutAPIApplicationCommandsResult } from "discord-api-types/v10";
 import { H } from "hono/dist/types/types";
+
+import type { RESTPutAPIApplicationCommandsResult } from "discord-api-types/v10";
 
 import commands from "~/routes/discord/_commands";
 import { Bindings } from "~/types/bindings";

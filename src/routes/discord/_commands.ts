@@ -1,4 +1,4 @@
-import { RESTPostAPIApplicationCommandsJSONBody } from "discord-api-types/v10";
+import type { RESTPostAPIApplicationCommandsJSONBody } from "discord-api-types/v10";
 
 export const INVITE_COMMAND: RESTPostAPIApplicationCommandsJSONBody = {
   name: "invite",

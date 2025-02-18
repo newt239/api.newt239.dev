@@ -1,6 +1,6 @@
 import {
-  APIInteraction,
-  APIInteractionResponse,
+  type APIInteraction,
+  type APIInteractionResponse,
   ApplicationCommandOptionType,
   InteractionResponseType,
   InteractionType,
@@ -50,6 +50,7 @@ discordRoute.post("/", async (c) => {
       type: InteractionResponseType.Pong,
     });
   }
+  console.log(interaction);
 
   if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
     switch (interaction.data.name.toLowerCase()) {

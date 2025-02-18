@@ -11,24 +11,24 @@
   },
   "dependencies": {
     "dayjs": "^1.11.13",
-    "discord-interactions": "^3.4.0",
-    "hono": "4.6.5",
-    "openai": "^4.77.0"
+    "discord-interactions": "^4.1.1",
+    "hono": "4.7.1",
+    "openai": "^4.85.1"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241230.0",
-    "@eslint/js": "^9.14.0",
-    "@types/node": "^20.17.11",
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
-    "@typescript-eslint/parser": "^5.62.0",
+    "@cloudflare/workers-types": "^4.20250214.0",
+    "@eslint/js": "^9.20.0",
+    "@types/node": "^22.13.4",
+    "@typescript-eslint/eslint-plugin": "^8.24.1",
+    "@typescript-eslint/parser": "^8.24.1",
     "discord-api-types": "^0.37.119",
-    "eslint": "^9.14.0",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint": "^9.20.1",
+    "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-unused-imports": "^2.0.0",
-    "prettier": "^3.3.3",
-    "typescript": "^5.7.2",
-    "typescript-eslint": "^8.18.0",
-    "wrangler": "3.51.2"
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "prettier": "^3.5.1",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.1",
+    "wrangler": "3.109.1"
   }
 }

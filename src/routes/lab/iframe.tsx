@@ -1,4 +1,4 @@
-import { Context } from "hono";
+import type { Context } from "hono";
 import { FC } from "hono/jsx";
 
 const IFrameComponent: FC<{ url: string }> = (props) => {

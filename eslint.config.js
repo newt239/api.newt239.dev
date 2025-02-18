@@ -1,7 +1,7 @@
-import eslint from '@eslint/js';
-import eslintConfigPrettier from 'eslint-config-prettier';
-import importPlugin from 'eslint-plugin-import';
-import tseslint from 'typescript-eslint';
+import eslint from "@eslint/js";
+import eslintConfigPrettier from "eslint-config-prettier";
+import importPlugin from "eslint-plugin-import";
+import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   eslint.configs.recommended,
@@ -9,10 +9,10 @@ export default tseslint.config(
   eslintConfigPrettier,
   importPlugin.flatConfigs.recommended,
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
+    files: ["**/*.{js,jsx,ts,tsx}"],
     languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
+      ecmaVersion: "latest",
+      sourceType: "module",
     },
     rules: {
       "import/no-unresolved": "off",
@@ -28,7 +28,13 @@ export default tseslint.config(
             "object",
             "type"
           ],
-          "pathGroups": [],
+          "pathGroups": [
+            {
+              "pattern": "{hono,hono/**}",
+              "group": "builtin",
+              "position": "before"
+            }
+          ],
           "pathGroupsExcludedImportTypes": ["builtin"],
           "alphabetize": {
             "order": "asc"

@@ -18,18 +18,18 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241230.0",
+    "@eslint/js": "^9.14.0",
     "@types/node": "^20.17.11",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
-    "discord-api-types": "^0.37.114",
-    "eslint-plugin-unused-imports": "^2.0.0",
-    "typescript": "^5.7.2",
-    "wrangler": "3.51.2",
-    "@eslint/js": "^9.14.0",
+    "discord-api-types": "^0.37.119",
     "eslint": "^9.14.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-unused-imports": "^2.0.0",
     "prettier": "^3.3.3",
-    "typescript-eslint": "^8.18.0"
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0",
+    "wrangler": "3.51.2"
   }
 }

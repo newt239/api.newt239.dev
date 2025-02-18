@@ -4,7 +4,7 @@ import {
   ApplicationCommandOptionType,
   InteractionResponseType,
   InteractionType,
-} from "discord-api-types/v10";
+} from "discord-api-types/payloads/v10";
 import { verifyKey } from "discord-interactions";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -52,7 +52,7 @@ discordRoute.post("/", async (c) => {
   }
   console.log(interaction);
 
-  if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+  if (interaction.type === InteractionType.ApplicationCommand) {
     switch (interaction.data.name.toLowerCase()) {
       case INVITE_COMMAND.name.toLowerCase(): {
         const applicationId = c.env.DISCORD_APPLICATION_ID;

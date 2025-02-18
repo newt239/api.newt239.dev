@@ -1,7 +1,6 @@
 import {
   type APIInteraction,
   type APIInteractionResponse,
-  ApplicationCommandOptionType,
   InteractionResponseType,
   InteractionType,
 } from "discord-api-types/payloads/v10";
@@ -14,15 +13,9 @@ import registerPOSTRoute from "./register";
 import {
   BANDORI_COMMAND,
   INVITE_COMMAND,
-  NOTION_COMMAND,
   PJSEKAI_COMMAND,
 } from "~/routes/discord/_commands";
 import { Bindings } from "~/types/bindings";
-import {
-  createBunkasaiPageOnNotion,
-  createMusicPageOnNotion,
-} from "~/utils/notion";
-import { getVideoInfo, getYoutubeVideoId } from "~/utils/youtube";
 
 const discordRoute = new Hono<{ Bindings: Bindings }>();
 
@@ -64,75 +57,6 @@ discordRoute.post("/", async (c) => {
             flags: 64,
           },
         });
-      }
-      case NOTION_COMMAND.name.toLowerCase(): {
-        const subCommand = interaction.data.options[0];
-        if (
-          subCommand.type === ApplicationCommandOptionType.Subcommand &&
-          subCommand.options
-        ) {
-          switch (subCommand.name.toLowerCase()) {
-            case "music": {
-              const url = subCommand.options[0].value as string;
-              const videoId = getYoutubeVideoId(url);
-              if (videoId) {
-                const video = await getVideoInfo(
-                  videoId,
-                  c.env.YOUTUBE_API_KEY
-                );
-                if (video) {
-                  const res = await createMusicPageOnNotion(
-                    c.env.NOTION_API_KEY,
-                    c.env.NOTION_MUSIC_DB_ID,
-                    {
-                      title: video.title,
-                      url: `https://youtube.com/watch?v=${videoId}`,
-                      description: video.description,
-                      cover: video.thumbnail,
-                    }
-                  );
-                  return c.json<APIInteractionResponse>({
-                    type: InteractionResponseType.ChannelMessageWithSource,
-                    data: {
-                      content: `🎵Music DBに追加しました！\n\nhttps://www.notion.so/${res.id}`,
-                    },
-                  });
-                }
-              }
-              break;
-            }
-            case "bunkasai": {
-              const url = subCommand.options[0].value as string;
-              const source_type = subCommand.options[1].value as string;
-              const year = subCommand.options[2].value as number;
-              const schoolType = subCommand.options[3].value as string;
-              const res = await createBunkasaiPageOnNotion(
-                c.env.NOTION_API_KEY,
-                c.env.NOTION_BUNKASAI_DB_ID,
-                {
-                  url,
-                  source_type,
-                  year,
-                  schoolType,
-                }
-              );
-              return c.json<APIInteractionResponse>({
-                type: InteractionResponseType.ChannelMessageWithSource,
-                data: {
-                  content: `🎆awesome-festival-tips DBに追加しました！\n\nhttps://www.notion.so/${res.id}`,
-                },
-              });
-            }
-          }
-
-          return c.json<APIInteractionResponse>({
-            type: InteractionResponseType.ChannelMessageWithSource,
-            data: {
-              content: "エラーが発生しました",
-            },
-          });
-        }
-        break;
       }
       case PJSEKAI_COMMAND.name.toLowerCase(): {
         const cards = (await (

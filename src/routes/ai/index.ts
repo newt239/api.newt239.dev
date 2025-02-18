@@ -36,7 +36,7 @@ const aiRoute = new Hono<{ Bindings: Bindings }>()
   .post("/generate-theme", async (c) => {
     const { results } = await c.env.DB.prepare(
       "SELECT COUNT(*) AS count FROM themes WHERE created_at > datetime('now', '-1 day')"
-    ).run();
+    ).all();
     const count = results[0].count as number;
     console.log(count);
 
@@ -50,7 +50,18 @@ const aiRoute = new Hono<{ Bindings: Bindings }>()
         }),
       });
     } else {
-      const { prompt } = await c.req.json();
+      console.log(await c.req.parseBody());
+      const { prompt } = await c.req.parseBody();
+      if (typeof prompt !== "string") {
+        return c.json({
+          body: JSON.stringify({
+            type: "error",
+            message: "Invalid request body.",
+            variables: [],
+          }),
+        });
+      }
+      console.log(c);
       const { OPENAI_API_KEY, DISCORD_WEBHOOK } = env(c);
       const openai = new OpenAI({
         apiKey: OPENAI_API_KEY,

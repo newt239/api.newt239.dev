@@ -1,10 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2021",
-    "lib": [
-      "es2021",
-      "DOM"
-    ],
+    "lib": ["es2021", "DOM"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "module": "es2022",
@@ -13,9 +10,7 @@
     "paths": {
       "~/*": ["src/*"]
     },
-    "types": [
-      "@cloudflare/workers-types"
-    ],
+    "types": ["@cloudflare/workers-types", "vitest/globals"],
     "resolveJsonModule": true,
     "allowJs": true,
     "checkJs": false,

@@ -10,7 +10,6 @@
     "format": "prettier --write \"./src/**/*.ts\""
   },
   "dependencies": {
-    "@notionhq/client": "^2.2.15",
     "dayjs": "^1.11.13",
     "discord-interactions": "^3.4.0",
     "hono": "4.6.5",

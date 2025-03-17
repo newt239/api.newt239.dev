@@ -133,7 +133,7 @@ const aiRoute = new Hono<{ Bindings: Bindings }>()
               timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
               color: 2664261,
               footer: {
-                text: "© 2022-2024 newt",
+                text: "© 2022-2025 newt",
                 icon_url: "https://newt239.dev/logo.png",
               },
             },

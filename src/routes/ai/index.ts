@@ -1,56 +1,65 @@
-import dayjs from "dayjs";
 import { Hono } from "hono";
 import { env } from "hono/adapter";
 import { cors } from "hono/cors";
+
+import dayjs from "dayjs";
 import OpenAI from "openai";
 
-import { Bindings } from "~/types/bindings";
+import type { Bindings } from "~/types/bindings";
+
 import { RESPONSE_FORMAT, SYSTEM_PROMPT } from "~/utils/ai";
 
-const aiRoute = new Hono<{ Bindings: Bindings }>();
-aiRoute.use(
-  "*",
-  cors({
-    origin: (origin) => {
-      const allowedOriginPatterns = [
-        /^https:\/\/.*\.newt239-dev\.pages\.dev$/,
-        /^http:\/\/localhost:\d+$/,
-      ];
+const aiRoute = new Hono<{ Bindings: Bindings }>()
+  .use(
+    "*",
+    cors({
+      origin: (origin) => {
+        const allowedOriginPatterns = [
+          /^https:\/\/.*\.newt239-dev\.pages\.dev$/,
+          /^http:\/\/localhost:\d+$/,
+        ];
 
-      return allowedOriginPatterns.some((pattern) => pattern.test(origin))
-        ? origin
-        : "https://newt239.dev";
-    },
-    allowHeaders: [
-      "X-Custom-Header",
-      "Upgrade-Insecure-Requests",
-      "Content-Type",
-    ],
-    allowMethods: ["POST", "GET", "OPTIONS"],
-    exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
-    maxAge: 600,
-    credentials: true,
-  })
-);
+        return allowedOriginPatterns.some((pattern) => pattern.test(origin))
+          ? origin
+          : "https://newt239.dev";
+      },
+      allowHeaders: [
+        "X-Custom-Header",
+        "Upgrade-Insecure-Requests",
+        "Content-Type",
+      ],
+      allowMethods: ["POST", "GET", "OPTIONS"],
+      exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
+      maxAge: 600,
+      credentials: true,
+    })
+  )
+  .post("/generate-theme", async (c) => {
+    const { results } = await c.env.DB.prepare(
+      "SELECT COUNT(*) AS count FROM themes WHERE created_at > datetime('now', '-1 day')"
+    ).all();
+    const count = results[0].count as number;
 
-aiRoute.post("/generate-theme", async (c) => {
-  const { results } = await c.env.DB.prepare(
-    "SELECT COUNT(*) AS count FROM themes WHERE created_at > datetime('now', '-1 day')"
-  ).run();
-  const count = results[0].count as number;
-  console.log(count);
-
-  // 24時間あたりのリクエストを100回に制限
-  if (count > 100) {
-    return c.json({
-      body: JSON.stringify({
-        type: "limited",
-        message: "Reached the limit of today's quota. Try again later.",
-        variables: [],
-      }),
-    });
-  } else {
-    const { prompt } = await c.req.json();
+    // 24時間あたりのリクエストを100回に制限
+    if (count > 100) {
+      return c.json({
+        body: JSON.stringify({
+          type: "limited",
+          message: "Reached the limit of today's quota. Try again later.",
+          variables: [],
+        }),
+      });
+    }
+    const { prompt } = await c.req.parseBody();
+    if (typeof prompt !== "string") {
+      return c.json({
+        body: JSON.stringify({
+          type: "error",
+          message: "Invalid request body.",
+          variables: [],
+        }),
+      });
+    }
     const { OPENAI_API_KEY, DISCORD_WEBHOOK } = env(c);
     const openai = new OpenAI({
       apiKey: OPENAI_API_KEY,
@@ -105,7 +114,7 @@ aiRoute.post("/generate-theme", async (c) => {
     )
       .bind(prompt, content)
       .run();
-    const parsedContent: {[key: string] :string} = JSON.parse(content);
+    const parsedContent: { [key: string]: string } = JSON.parse(content);
     // ディスコードに通知
     await fetch(DISCORD_WEBHOOK, {
       method: "POST",
@@ -122,7 +131,7 @@ aiRoute.post("/generate-theme", async (c) => {
             timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
             color: 2664261,
             footer: {
-              text: "© 2022-2024 newt",
+              text: "© 2022-2025 newt",
               icon_url: "https://newt239.dev/logo.png",
             },
           },
@@ -139,7 +148,6 @@ aiRoute.post("/generate-theme", async (c) => {
         })),
       }),
     });
-  }
-});
+  });
 
 export default aiRoute;

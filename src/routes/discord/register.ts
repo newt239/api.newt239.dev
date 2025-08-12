@@ -1,9 +1,9 @@
-import { H } from "hono/dist/types/types";
+import type { H } from "hono/types";
 
 import type { RESTPutAPIApplicationCommandsResult } from "discord-api-types/v10";
+import type { Bindings } from "~/types/bindings";
 
 import commands from "~/routes/discord/_commands";
-import { Bindings } from "~/types/bindings";
 
 const registerPOSTRoute: H<{ Bindings: Bindings }> = async (c) => {
   const token = c.env.DISCORD_TOKEN;
@@ -18,7 +18,6 @@ const registerPOSTRoute: H<{ Bindings: Bindings }> = async (c) => {
     method: "PUT",
     body: JSON.stringify(commands),
   });
-  console.log(response);
   if (response.ok) {
     const data = (await response.json()) as RESTPutAPIApplicationCommandsResult;
     return c.json({
@@ -26,16 +25,16 @@ const registerPOSTRoute: H<{ Bindings: Bindings }> = async (c) => {
       message: "Registered all commands",
       data,
     });
-  } else {
-    const text = await response.text();
-    return c.json(
-      {
-        type: "error",
-        message: text,
-      },
-      500
-    );
   }
+
+  const text = await response.text();
+  return c.json(
+    {
+      type: "error",
+      message: text,
+    },
+    500
+  );
 };
 
 export default registerPOSTRoute;

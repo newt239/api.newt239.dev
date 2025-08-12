@@ -9,7 +9,7 @@ export const getSpotifyAccessToken = async (
     {
       method: "POST",
       headers: {
-        Authorization: "Basic " + token,
+        Authorization: `Basic ${token}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
@@ -27,7 +27,6 @@ export const getSpotifyAccessToken = async (
     })) as { access_token: string } | null;
   if (accessTokenRes) {
     return accessTokenRes.access_token;
-  } else {
-    return "";
   }
+  return "";
 };

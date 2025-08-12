@@ -1,17 +1,17 @@
-import { Context } from "hono";
-import { FC } from "hono/jsx";
+import type { Context } from "hono";
+import type { FC } from "hono/jsx";
 
 const IFrameComponent: FC<{ url: string }> = (props) => {
   const title = "iframe demo";
 
   return (
-    <html>
+    <html lang="ja">
       <head>
         <title>{title}</title>
       </head>
       <body>
         <h1>{title}</h1>
-        <iframe width="800px" height="500px" src={props.url}></iframe>
+        <iframe width="800px" height="500px" src={props.url} title={title} />
       </body>
     </html>
   );

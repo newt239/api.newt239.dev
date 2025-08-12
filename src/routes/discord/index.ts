@@ -11,12 +11,13 @@ import { verifyKey } from "discord-interactions";
 
 import registerPOSTRoute from "./register";
 
+import type { Bindings } from "~/types/bindings";
+
 import {
   BANDORI_COMMAND,
   INVITE_COMMAND,
   PJSEKAI_COMMAND,
 } from "~/routes/discord/_commands";
-import { Bindings } from "~/types/bindings";
 
 const discordRoute = new Hono<{ Bindings: Bindings }>()
   .use("*", cors())

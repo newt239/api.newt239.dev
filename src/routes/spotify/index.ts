@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-import { Bindings } from "~/types/bindings";
-import { SpotifyMyTopTrackProps } from "~/types/spotify";
+import type { Bindings } from "~/types/bindings";
+import type { SpotifyMyTopTrackProps } from "~/types/spotify";
+
 import { getSpotifyAccessToken } from "~/utils/spotify";
 
 const spotifyRoute = new Hono<{ Bindings: Bindings }>()
@@ -20,7 +21,7 @@ const spotifyRoute = new Hono<{ Bindings: Bindings }>()
 
     const requestOptions = {
       method: "GET",
-      headers: { Authorization: "Bearer " + accessToken },
+      headers: { Authorization: `Bearer ${accessToken}` },
     };
     const res = await fetch(
       "https://api.spotify.com/v1/me/top/tracks",

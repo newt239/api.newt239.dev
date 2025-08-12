@@ -146,6 +146,47 @@ const discordRoute = new Hono<{ Bindings: Bindings }>()
     const data: object = await response.json();
 
     return c.json(data);
+  })
+  .get("/channels/:channelId/messages", async (c) => {
+    const token = c.env.DISCORD_TOKEN;
+    const channelId = c.req.param("channelId");
+    const limit = c.req.query("limit") || "50";
+    const before = c.req.query("before");
+    const after = c.req.query("after");
+
+    if (!channelId) {
+      return c.json({ error: "チャンネルIDが必要です" }, 400);
+    }
+
+    let url = `https://discord.com/api/v10/channels/${channelId}/messages?limit=${limit}`;
+    
+    if (before) {
+      url += `&before=${before}`;
+    }
+    if (after) {
+      url += `&after=${after}`;
+    }
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bot ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return c.json(
+          { error: "メッセージ取得に失敗しました", details: errorData },
+          response.status as 400 | 401 | 403 | 404 | 500
+        );
+      }
+
+      const messages = await response.json() as unknown[];
+      return c.json(messages);
+    } catch {
+      return c.json({ error: "内部サーバーエラーが発生しました" }, 500);
+    }
   });
 
 export default discordRoute;

@@ -27,3 +27,20 @@ describe("Testing /ai path", () => {
     expect(data.variables.length).toEqual(requiredVariables.length);
   });
 });
+
+describe("Testing /discord path", () => {
+  it("Should return 400 when channelId is not provided", async () => {
+    const res = await testClient(app, env).discord.channels[":channelId"].messages.$get({
+      param: { channelId: "" },
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("Should return messages when valid channelId is provided", async () => {
+    // モックのチャンネルIDでテスト
+    const res = await testClient(app, env).discord.channels[":channelId"].messages.$get({
+      param: { channelId: "123456789" },
+    });
+    expect(res.status).toBe(200);
+  });
+});

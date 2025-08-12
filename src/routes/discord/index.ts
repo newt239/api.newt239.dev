@@ -43,7 +43,6 @@ const discordRoute = new Hono<{ Bindings: Bindings }>()
         type: InteractionResponseType.Pong,
       });
     }
-    console.log(interaction);
 
     if (interaction.type === InteractionType.ApplicationCommand) {
       switch (interaction.data.name.toLowerCase()) {

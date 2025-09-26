@@ -50,8 +50,8 @@ const aiRoute = new Hono<{ Bindings: Bindings }>()
         }),
       });
     }
-    const { prompt } = await c.req.parseBody();
-    if (typeof prompt !== "string") {
+    const body = await c.req.json();
+    if (!body || typeof body.prompt !== "string") {
       return c.json({
         body: JSON.stringify({
           type: "error",
@@ -60,6 +60,7 @@ const aiRoute = new Hono<{ Bindings: Bindings }>()
         }),
       });
     }
+    const prompt = body.prompt;
     const { OPENAI_API_KEY, DISCORD_WEBHOOK } = env(c);
     const openai = new OpenAI({
       apiKey: OPENAI_API_KEY,

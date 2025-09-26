@@ -75,7 +75,7 @@ const discordRoute = new Hono<{ Bindings: Bindings }>()
           );
           const n = Math.floor(Math.random() * filteredCards.length);
           const card = filteredCards[n];
-          const imageUrl = `https://storage.sekai.best/sekai-jp-assets/character/member_small/${card.assetbundleName}_rip/card_after_training.webp`;
+          const imageUrl = `https://storage.sekai.best/sekai-jp-assets/character/member/${card.assetbundleName}_rip/card_after_training.webp`;
           return c.json<APIInteractionResponse>({
             type: InteractionResponseType.ChannelMessageWithSource,
             data: {
@@ -159,7 +159,7 @@ const discordRoute = new Hono<{ Bindings: Bindings }>()
     }
 
     let url = `https://discord.com/api/v10/channels/${channelId}/messages?limit=${limit}`;
-    
+
     if (before) {
       url += `&before=${before}`;
     }
@@ -182,7 +182,7 @@ const discordRoute = new Hono<{ Bindings: Bindings }>()
         );
       }
 
-      const messages = await response.json() as unknown[];
+      const messages = (await response.json()) as unknown[];
       return c.json(messages);
     } catch {
       return c.json({ error: "内部サーバーエラーが発生しました" }, 500);

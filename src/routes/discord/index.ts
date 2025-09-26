@@ -75,7 +75,7 @@ const discordRoute = new Hono<{ Bindings: Bindings }>()
           );
           const n = Math.floor(Math.random() * filteredCards.length);
           const card = filteredCards[n];
-          const imageUrl = `https://storage.sekai.best/sekai-jp-assets/character/member/${card.assetbundleName}_rip/card_after_training.webp`;
+          const imageUrl = `https://storage.sekai.best/sekai-jp-assets/character/member/${card.assetbundleName}/card_after_training.webp`;
           return c.json<APIInteractionResponse>({
             type: InteractionResponseType.ChannelMessageWithSource,
             data: {

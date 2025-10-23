@@ -29,7 +29,7 @@ export default defineWorkersProject(async () => {
 
   return {
     test: {
-      setupFiles: ["./src/test/apply-migrations.ts"],
+      setupFiles: ["./src/tests/apply-migrations.ts"],
       globals: true,
       includeTaskLocation: true,
       poolOptions: {

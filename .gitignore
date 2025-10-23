@@ -1,6 +1,7 @@
 node_modules/
+.wrangler/
+.serena/
 .env
 .dev.vars
 test.js
-.wrangler/
 wrangler.toml

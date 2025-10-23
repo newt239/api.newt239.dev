@@ -1,40 +1,69 @@
-import { Hono } from "hono";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { env } from "hono/adapter";
-import { cors } from "hono/cors";
 
 import dayjs from "dayjs";
 import OpenAI from "openai";
 
 import type { Bindings } from "~/types/bindings";
 
-import { RESPONSE_FORMAT, SYSTEM_PROMPT } from "~/utils/ai";
+import { RESPONSE_FORMAT, SYSTEM_PROMPT } from "~/libs/constants";
 
-const aiRoute = new Hono<{ Bindings: Bindings }>()
-  .use(
-    "*",
-    cors({
-      origin: (origin) => {
-        const allowedOriginPatterns = [
-          /^https:\/\/.*\.newt239-dev\.pages\.dev$/,
-          /^http:\/\/localhost:\d+$/,
-        ];
+const generateThemeSchema = z.object({
+  prompt: z.string().min(1, "Prompt is required").openapi({
+    example: "夏の海辺をイメージしたテーマ",
+    description: "テーマ生成のためのプロンプト",
+  }),
+});
 
-        return allowedOriginPatterns.some((pattern) => pattern.test(origin))
-          ? origin
-          : "https://newt239.dev";
-      },
-      allowHeaders: [
-        "X-Custom-Header",
-        "Upgrade-Insecure-Requests",
-        "Content-Type",
+const themeVariableSchema = z.object({
+  name: z.string().openapi({ example: "primary-color" }),
+  value: z.string().openapi({ example: "#3498db" }),
+});
+
+const themeResponseSchema = z.object({
+  body: z.string().openapi({
+    example: JSON.stringify({
+      type: "success",
+      message: "Successfully generated theme.",
+      variables: [
+        { name: "primary-color", value: "#3498db" },
+        { name: "secondary-color", value: "#2ecc71" },
       ],
-      allowMethods: ["POST", "GET", "OPTIONS"],
-      exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
-      maxAge: 600,
-      credentials: true,
-    })
-  )
-  .post("/generate-theme", async (c) => {
+    }),
+  }),
+});
+
+const route = createRoute({
+  method: "post",
+  path: "/",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: generateThemeSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: themeResponseSchema,
+        },
+      },
+      description: "テーマ生成結果",
+    },
+  },
+  tags: ["AI"],
+  summary: "AIでテーマを生成",
+  description:
+    "指定されたプロンプトからAIがCSSテーマを生成します（1日100回まで）",
+});
+
+const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(
+  route,
+  async (c) => {
     const { results } = await c.env.DB.prepare(
       "SELECT COUNT(*) AS count FROM themes WHERE created_at > datetime('now', '-1 day')"
     ).all();
@@ -50,17 +79,8 @@ const aiRoute = new Hono<{ Bindings: Bindings }>()
         }),
       });
     }
-    const body = await c.req.json();
-    if (!body || typeof body.prompt !== "string") {
-      return c.json({
-        body: JSON.stringify({
-          type: "error",
-          message: "Invalid request body.",
-          variables: [],
-        }),
-      });
-    }
-    const prompt = body.prompt;
+
+    const { prompt } = c.req.valid("json");
     const { OPENAI_API_KEY, DISCORD_WEBHOOK } = env(c);
     const openai = new OpenAI({
       apiKey: OPENAI_API_KEY,
@@ -94,7 +114,7 @@ const aiRoute = new Hono<{ Bindings: Bindings }>()
               timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
               color: 16711680,
               footer: {
-                text: "© 2022-2024 newt",
+                text: "© 2022-2025 newt",
                 icon_url: "https://newt239.dev/logo.png",
               },
             },
@@ -149,6 +169,7 @@ const aiRoute = new Hono<{ Bindings: Bindings }>()
         })),
       }),
     });
-  });
+  }
+);
 
-export default aiRoute;
+export default app;

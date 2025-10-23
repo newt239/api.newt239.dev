@@ -22,11 +22,11 @@ export const getSpotifyAccessToken = async (
       return res.json();
     })
     .catch((err) => {
-      console.log(err);
+      console.error(err);
       return null;
     })) as { access_token: string } | null;
   if (accessTokenRes) {
     return accessTokenRes.access_token;
   }
-  return "";
+  return null;
 };

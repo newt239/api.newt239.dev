@@ -30,12 +30,12 @@ const discordRoute = new Hono<{ Bindings: Bindings }>()
       timestamp &&
       verifyKey(body, signature, timestamp, c.env.DISCORD_PUBLIC_KEY);
     if (!isValidRequest) {
-      return c.text("Bad request signature.", 401);
+      return c.json({ error: "Bad request signature." } as const, 401);
     }
 
     const interaction: APIInteraction = JSON.parse(body);
     if (!interaction) {
-      return c.text("Bad request signature.", 401);
+      return c.json({ error: "Invalid request body." } as const, 401);
     }
 
     if (interaction.type === InteractionType.Ping) {
@@ -81,7 +81,7 @@ const discordRoute = new Hono<{ Bindings: Bindings }>()
             data: {
               content: `${card.prefix}\n\n${imageUrl}`,
             },
-          });
+          } as const);
         }
         case BANDORI_COMMAND.name.toLowerCase(): {
           const data = (await (
@@ -109,7 +109,7 @@ const discordRoute = new Hono<{ Bindings: Bindings }>()
             data: {
               content: `${card.prefix}\n\n${imageUrl}`,
             },
-          });
+          } as const);
         }
         default:
           console.error("Unknown Command");
@@ -126,7 +126,7 @@ const discordRoute = new Hono<{ Bindings: Bindings }>()
     return c.json(
       {
         error: "Unknown Type",
-      },
+      } as const,
       400
     );
   })
@@ -177,7 +177,10 @@ const discordRoute = new Hono<{ Bindings: Bindings }>()
       if (!response.ok) {
         const errorData = await response.json();
         return c.json(
-          { error: "メッセージ取得に失敗しました", details: errorData },
+          {
+            error: "メッセージ取得に失敗しました",
+            details: errorData,
+          } as const,
           response.status as 400 | 401 | 403 | 404 | 500
         );
       }
@@ -185,7 +188,10 @@ const discordRoute = new Hono<{ Bindings: Bindings }>()
       const messages = (await response.json()) as unknown[];
       return c.json(messages);
     } catch {
-      return c.json({ error: "内部サーバーエラーが発生しました" }, 500);
+      return c.json(
+        { error: "内部サーバーエラーが発生しました" } as const,
+        500
+      );
     }
   });
 

@@ -3,7 +3,7 @@ import { testClient } from "hono/testing";
 import { env } from "cloudflare:test";
 
 import app from "~/routes/index";
-import { requiredVariables } from "~/utils/ai";
+import { requiredVariables } from "~/utils/constants";
 
 describe("Testing root path", () => {
   it("Should return 200 response", async () => {
@@ -30,7 +30,9 @@ describe("Testing /ai path", () => {
 
 describe("Testing /discord path", () => {
   it("Should return 400 when channelId is not provided", async () => {
-    const res = await testClient(app, env).discord.channels[":channelId"].messages.$get({
+    const res = await testClient(app, env).discord.channels[
+      ":channelId"
+    ].messages.$get({
       param: { channelId: "" },
     });
     expect(res.status).toBe(400);
@@ -38,7 +40,9 @@ describe("Testing /discord path", () => {
 
   it("Should return messages when valid channelId is provided", async () => {
     // モックのチャンネルIDでテスト
-    const res = await testClient(app, env).discord.channels[":channelId"].messages.$get({
+    const res = await testClient(app, env).discord.channels[
+      ":channelId"
+    ].messages.$get({
       param: { channelId: "123456789" },
     });
     expect(res.status).toBe(200);

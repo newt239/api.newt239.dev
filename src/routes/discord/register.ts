@@ -24,7 +24,7 @@ const registerPOSTRoute: H<{ Bindings: Bindings }> = async (c) => {
       type: "success",
       message: "Registered all commands",
       data,
-    });
+    } as const);
   }
 
   const text = await response.text();
@@ -32,7 +32,7 @@ const registerPOSTRoute: H<{ Bindings: Bindings }> = async (c) => {
     {
       type: "error",
       message: text,
-    },
+    } as const,
     500
   );
 };

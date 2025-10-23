@@ -7,7 +7,7 @@ import OpenAI from "openai";
 
 import type { Bindings } from "~/types/bindings";
 
-import { RESPONSE_FORMAT, SYSTEM_PROMPT } from "~/utils/ai";
+import { RESPONSE_FORMAT, SYSTEM_PROMPT } from "~/utils/constants";
 
 const aiRoute = new Hono<{ Bindings: Bindings }>()
   .use(

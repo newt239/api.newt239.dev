@@ -1,5 +1,6 @@
-import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
+
+import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 
 import type { Bindings } from "~/types/bindings";

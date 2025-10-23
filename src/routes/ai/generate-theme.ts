@@ -1,7 +1,5 @@
-import { zValidator } from "@hono/zod-validator";
-import { Hono } from "hono";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { env } from "hono/adapter";
-import { z } from "zod";
 
 import dayjs from "dayjs";
 import OpenAI from "openai";
@@ -11,12 +9,60 @@ import type { Bindings } from "~/types/bindings";
 import { RESPONSE_FORMAT, SYSTEM_PROMPT } from "~/libs/constants";
 
 const generateThemeSchema = z.object({
-  prompt: z.string().min(1, "Prompt is required"),
+  prompt: z.string().min(1, "Prompt is required").openapi({
+    example: "夏の海辺をイメージしたテーマ",
+    description: "テーマ生成のためのプロンプト",
+  }),
 });
 
-const app = new Hono<{ Bindings: Bindings }>().post(
-  "/",
-  zValidator("json", generateThemeSchema),
+const themeVariableSchema = z.object({
+  name: z.string().openapi({ example: "primary-color" }),
+  value: z.string().openapi({ example: "#3498db" }),
+});
+
+const themeResponseSchema = z.object({
+  body: z.string().openapi({
+    example: JSON.stringify({
+      type: "success",
+      message: "Successfully generated theme.",
+      variables: [
+        { name: "primary-color", value: "#3498db" },
+        { name: "secondary-color", value: "#2ecc71" },
+      ],
+    }),
+  }),
+});
+
+const route = createRoute({
+  method: "post",
+  path: "/",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: generateThemeSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: themeResponseSchema,
+        },
+      },
+      description: "テーマ生成結果",
+    },
+  },
+  tags: ["AI"],
+  summary: "AIでテーマを生成",
+  description:
+    "指定されたプロンプトからAIがCSSテーマを生成します（1日100回まで）",
+});
+
+const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(
+  route,
   async (c) => {
     const { results } = await c.env.DB.prepare(
       "SELECT COUNT(*) AS count FROM themes WHERE created_at > datetime('now', '-1 day')"

@@ -8,6 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@hono/swagger-ui':
+        specifier: ^0.5.2
+        version: 0.5.2(hono@4.10.2)
+      '@hono/zod-openapi':
+        specifier: ^1.1.4
+        version: 1.1.4(hono@4.10.2)(zod@4.1.12)
       '@hono/zod-validator':
         specifier: ^0.7.4
         version: 0.7.4(hono@4.10.2)(zod@4.1.12)
@@ -32,7 +38,7 @@ importers:
     devDependencies:
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.9.14
-        version: 0.9.14(@cloudflare/workers-types@4.20251014.0)(@vitest/runner@4.0.1)(@vitest/snapshot@4.0.1)(vitest@4.0.1(@types/node@24.9.1))
+        version: 0.9.14(@cloudflare/workers-types@4.20251014.0)(@vitest/runner@4.0.1)(@vitest/snapshot@4.0.1)(vitest@4.0.1(@types/node@24.9.1)(yaml@2.8.1))
       '@cloudflare/workers-types':
         specifier: ^4.20251014.0
         version: 4.20251014.0
@@ -65,12 +71,17 @@ importers:
         version: 8.46.2(eslint@9.38.0)(typescript@5.9.3)
       vitest:
         specifier: ^4.0.1
-        version: 4.0.1(@types/node@24.9.1)
+        version: 4.0.1(@types/node@24.9.1)(yaml@2.8.1)
       wrangler:
         specifier: 4.44.0
         version: 4.44.0(@cloudflare/workers-types@4.20251014.0)
 
 packages:
+
+  '@asteasolutions/zod-to-openapi@8.1.0':
+    resolution: {integrity: sha512-tQFxVs05J/6QXXqIzj6rTRk3nj1HFs4pe+uThwE95jL5II2JfpVXkK+CqkO7aT0Do5AYqO6LDrKpleLUFXgY+g==}
+    peerDependencies:
+      zod: ^4.0.0
 
   '@cloudflare/kv-asset-handler@0.4.0':
     resolution: {integrity: sha512-+tv3z+SPp+gqTIcImN9o0hqE9xyfQjI1XD9pL6NuKjua9B1y7mNYv0S9cP+QEbA4ppVgGZEmKOvHX5G5Ei1CVA==}
@@ -475,6 +486,18 @@ packages:
   '@eslint/plugin-kit@0.4.0':
     resolution: {integrity: sha512-sB5uyeq+dwCWyPi31B2gQlVlo+j5brPlWx4yZBrEaRo/nhdDE8Xke1gsGgtiBdaBTxuTkceLVuVt/pclrasb0A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@hono/swagger-ui@0.5.2':
+    resolution: {integrity: sha512-7wxLKdb8h7JTdZ+K8DJNE3KXQMIpJejkBTQjrYlUWF28Z1PGOKw6kUykARe5NTfueIN37jbyG/sBYsbzXzG53A==}
+    peerDependencies:
+      hono: '*'
+
+  '@hono/zod-openapi@1.1.4':
+    resolution: {integrity: sha512-4BbOtd6oKg20yo6HLluVbEycBLLIfdKX5o/gUSoKZ2uBmeP4Og/VDfIX3k9pbNEX5W3fRkuPeVjGA+zaQDVY1A==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      hono: '>=4.3.6'
+      zod: ^4.0.0
 
   '@hono/zod-validator@0.7.4':
     resolution: {integrity: sha512-biKGn3BRJVaftZlIPMyK+HCe/UHAjJ6sH0UyXe3+v0OcgVr9xfImDROTJFLtn9e3XEEAHGZIM9U6evu85abm8Q==}
@@ -1599,6 +1622,9 @@ packages:
       zod:
         optional: true
 
+  openapi3-ts@4.5.0:
+    resolution: {integrity: sha512-jaL+HgTq2Gj5jRcfdutgRGLosCy/hT8sQf6VOy+P+g36cZOjI1iukdPnijC+4CmeRzg/jEllJUboEic2FhxhtQ==}
+
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
@@ -2030,6 +2056,11 @@ packages:
       utf-8-validate:
         optional: true
 
+  yaml@2.8.1:
+    resolution: {integrity: sha512-lcYcMxX2PO9XMGvAJkJ3OsNMw+/7FKes7/hgerGUYWIoWu5j/+YQqcZr5JnPZWzOsEBgMbSbiSTn/dv/69Mkpw==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
@@ -2051,6 +2082,11 @@ packages:
 
 snapshots:
 
+  '@asteasolutions/zod-to-openapi@8.1.0(zod@4.1.12)':
+    dependencies:
+      openapi3-ts: 4.5.0
+      zod: 4.1.12
+
   '@cloudflare/kv-asset-handler@0.4.0':
     dependencies:
       mime: 3.0.0
@@ -2061,7 +2097,7 @@ snapshots:
     optionalDependencies:
       workerd: 1.20251011.0
 
-  '@cloudflare/vitest-pool-workers@0.9.14(@cloudflare/workers-types@4.20251014.0)(@vitest/runner@4.0.1)(@vitest/snapshot@4.0.1)(vitest@4.0.1(@types/node@24.9.1))':
+  '@cloudflare/vitest-pool-workers@0.9.14(@cloudflare/workers-types@4.20251014.0)(@vitest/runner@4.0.1)(@vitest/snapshot@4.0.1)(vitest@4.0.1(@types/node@24.9.1)(yaml@2.8.1))':
     dependencies:
       '@vitest/runner': 4.0.1
       '@vitest/snapshot': 4.0.1
@@ -2070,7 +2106,7 @@ snapshots:
       devalue: 5.4.2
       miniflare: 4.20251011.0
       semver: 7.7.3
-      vitest: 4.0.1(@types/node@24.9.1)
+      vitest: 4.0.1(@types/node@24.9.1)(yaml@2.8.1)
       wrangler: 4.44.0(@cloudflare/workers-types@4.20251014.0)
       zod: 3.25.76
     transitivePeerDependencies:
@@ -2302,6 +2338,18 @@ snapshots:
     dependencies:
       '@eslint/core': 0.16.0
       levn: 0.4.1
+
+  '@hono/swagger-ui@0.5.2(hono@4.10.2)':
+    dependencies:
+      hono: 4.10.2
+
+  '@hono/zod-openapi@1.1.4(hono@4.10.2)(zod@4.1.12)':
+    dependencies:
+      '@asteasolutions/zod-to-openapi': 8.1.0(zod@4.1.12)
+      '@hono/zod-validator': 0.7.4(hono@4.10.2)(zod@4.1.12)
+      hono: 4.10.2
+      openapi3-ts: 4.5.0
+      zod: 4.1.12
 
   '@hono/zod-validator@0.7.4(hono@4.10.2)(zod@4.1.12)':
     dependencies:
@@ -2622,13 +2670,13 @@ snapshots:
       chai: 6.2.0
       tinyrainbow: 3.0.3
 
-  '@vitest/mocker@4.0.1(vite@7.1.12(@types/node@24.9.1))':
+  '@vitest/mocker@4.0.1(vite@7.1.12(@types/node@24.9.1)(yaml@2.8.1))':
     dependencies:
       '@vitest/spy': 4.0.1
       estree-walker: 3.0.3
       magic-string: 0.30.19
     optionalDependencies:
-      vite: 7.1.12(@types/node@24.9.1)
+      vite: 7.1.12(@types/node@24.9.1)(yaml@2.8.1)
 
   '@vitest/pretty-format@4.0.1':
     dependencies:
@@ -3524,6 +3572,10 @@ snapshots:
       ws: 8.18.0
       zod: 4.1.12
 
+  openapi3-ts@4.5.0:
+    dependencies:
+      yaml: 2.8.1
+
   optionator@0.9.4:
     dependencies:
       deep-is: 0.1.4
@@ -3908,7 +3960,7 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  vite@7.1.12(@types/node@24.9.1):
+  vite@7.1.12(@types/node@24.9.1)(yaml@2.8.1):
     dependencies:
       esbuild: 0.25.11
       fdir: 6.5.0(picomatch@4.0.3)
@@ -3919,11 +3971,12 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.9.1
       fsevents: 2.3.3
+      yaml: 2.8.1
 
-  vitest@4.0.1(@types/node@24.9.1):
+  vitest@4.0.1(@types/node@24.9.1)(yaml@2.8.1):
     dependencies:
       '@vitest/expect': 4.0.1
-      '@vitest/mocker': 4.0.1(vite@7.1.12(@types/node@24.9.1))
+      '@vitest/mocker': 4.0.1(vite@7.1.12(@types/node@24.9.1)(yaml@2.8.1))
       '@vitest/pretty-format': 4.0.1
       '@vitest/runner': 4.0.1
       '@vitest/snapshot': 4.0.1
@@ -3940,7 +3993,7 @@ snapshots:
       tinyexec: 0.3.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vite: 7.1.12(@types/node@24.9.1)
+      vite: 7.1.12(@types/node@24.9.1)(yaml@2.8.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.9.1
@@ -4036,6 +4089,8 @@ snapshots:
       - utf-8-validate
 
   ws@8.18.0: {}
+
+  yaml@2.8.1: {}
 
   yocto-queue@0.1.0: {}
 

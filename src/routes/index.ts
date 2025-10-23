@@ -9,6 +9,7 @@ import messagesRoute from "~/routes/discord/messages";
 import registerRoute from "~/routes/discord/register";
 import iframeRoute from "~/routes/lab/iframe";
 import postRoute from "~/routes/lab/post";
+import openApiRoute from "~/routes/openapi";
 import myTopTracksRoute from "~/routes/spotify/my-top-tracks";
 import searchRoute from "~/routes/spotify/search";
 
@@ -26,6 +27,8 @@ const app = new Hono<{ Bindings: Bindings }>()
   .route("/ai/generate-theme", generateThemeRoute)
   // Lab routes
   .route("/lab/post", postRoute)
-  .route("/lab/iframe", iframeRoute);
+  .route("/lab/iframe", iframeRoute)
+  // OpenAPI documentation
+  .route("/docs", openApiRoute);
 
 export default app;

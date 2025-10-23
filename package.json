@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@spotify/web-api-ts-sdk": "^1.2.0",
     "dayjs": "^1.11.13",
     "discord-interactions": "^4.3.0",
     "hono": "4.9.1",

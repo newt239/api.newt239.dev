@@ -1,11 +1,11 @@
-import type { H } from "hono/types";
+import { Hono } from "hono";
 
 import type { RESTPutAPIApplicationCommandsResult } from "discord-api-types/v10";
 import type { Bindings } from "~/types/bindings";
 
 import commands from "~/routes/discord/_commands";
 
-const registerPOSTRoute: H<{ Bindings: Bindings }> = async (c) => {
+const app = new Hono<{ Bindings: Bindings }>().post("/", async (c) => {
   const token = c.env.DISCORD_TOKEN;
   const applicationId = c.env.DISCORD_APPLICATION_ID;
   const url = `https://discord.com/api/v10/applications/${applicationId}/commands`;
@@ -35,6 +35,6 @@ const registerPOSTRoute: H<{ Bindings: Bindings }> = async (c) => {
     } as const,
     500
   );
-};
+});
 
-export default registerPOSTRoute;
+export default app;

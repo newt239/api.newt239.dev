@@ -1,6 +1,7 @@
+import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { env } from "hono/adapter";
-import { cors } from "hono/cors";
+import { z } from "zod";
 
 import dayjs from "dayjs";
 import OpenAI from "openai";
@@ -9,32 +10,14 @@ import type { Bindings } from "~/types/bindings";
 
 import { RESPONSE_FORMAT, SYSTEM_PROMPT } from "~/libs/constants";
 
-const aiRoute = new Hono<{ Bindings: Bindings }>()
-  .use(
-    "*",
-    cors({
-      origin: (origin) => {
-        const allowedOriginPatterns = [
-          /^https:\/\/.*\.newt239-dev\.pages\.dev$/,
-          /^http:\/\/localhost:\d+$/,
-        ];
+const generateThemeSchema = z.object({
+  prompt: z.string().min(1, "Prompt is required"),
+});
 
-        return allowedOriginPatterns.some((pattern) => pattern.test(origin))
-          ? origin
-          : "https://newt239.dev";
-      },
-      allowHeaders: [
-        "X-Custom-Header",
-        "Upgrade-Insecure-Requests",
-        "Content-Type",
-      ],
-      allowMethods: ["POST", "GET", "OPTIONS"],
-      exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
-      maxAge: 600,
-      credentials: true,
-    })
-  )
-  .post("/generate-theme", async (c) => {
+const app = new Hono<{ Bindings: Bindings }>().post(
+  "/",
+  zValidator("json", generateThemeSchema),
+  async (c) => {
     const { results } = await c.env.DB.prepare(
       "SELECT COUNT(*) AS count FROM themes WHERE created_at > datetime('now', '-1 day')"
     ).all();
@@ -50,18 +33,8 @@ const aiRoute = new Hono<{ Bindings: Bindings }>()
         }),
       });
     }
-    const body = await c.req.json();
-    if (!body || typeof body.prompt !== "string") {
-      return c.json(
-        {
-          type: "error",
-          message: "Invalid request body.",
-          variables: [],
-        } as const,
-        400
-      );
-    }
-    const prompt = body.prompt;
+
+    const { prompt } = c.req.valid("json");
     const { OPENAI_API_KEY, DISCORD_WEBHOOK } = env(c);
     const openai = new OpenAI({
       apiKey: OPENAI_API_KEY,
@@ -150,6 +123,7 @@ const aiRoute = new Hono<{ Bindings: Bindings }>()
         })),
       }),
     });
-  });
+  }
+);
 
-export default aiRoute;
+export default app;

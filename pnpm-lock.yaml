@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@hono/zod-validator':
+        specifier: ^0.7.4
+        version: 0.7.4(hono@4.10.2)(zod@4.1.12)
       '@spotify/web-api-ts-sdk':
         specifier: ^1.2.0
         version: 1.2.0
@@ -22,7 +25,10 @@ importers:
         version: 4.10.2
       openai:
         specifier: ^6.6.0
-        version: 6.6.0(ws@8.18.0)(zod@3.25.76)
+        version: 6.6.0(ws@8.18.0)(zod@4.1.12)
+      zod:
+        specifier: ^4.1.12
+        version: 4.1.12
     devDependencies:
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.9.14
@@ -469,6 +475,12 @@ packages:
   '@eslint/plugin-kit@0.4.0':
     resolution: {integrity: sha512-sB5uyeq+dwCWyPi31B2gQlVlo+j5brPlWx4yZBrEaRo/nhdDE8Xke1gsGgtiBdaBTxuTkceLVuVt/pclrasb0A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@hono/zod-validator@0.7.4':
+    resolution: {integrity: sha512-biKGn3BRJVaftZlIPMyK+HCe/UHAjJ6sH0UyXe3+v0OcgVr9xfImDROTJFLtn9e3XEEAHGZIM9U6evu85abm8Q==}
+    peerDependencies:
+      hono: '>=3.9.0'
+      zod: ^3.25.0 || ^4.0.0
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -2034,6 +2046,9 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
+  zod@4.1.12:
+    resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
+
 snapshots:
 
   '@cloudflare/kv-asset-handler@0.4.0':
@@ -2287,6 +2302,11 @@ snapshots:
     dependencies:
       '@eslint/core': 0.16.0
       levn: 0.4.1
+
+  '@hono/zod-validator@0.7.4(hono@4.10.2)(zod@4.1.12)':
+    dependencies:
+      hono: 4.10.2
+      zod: 4.1.12
 
   '@humanfs/core@0.19.1': {}
 
@@ -3499,10 +3519,10 @@ snapshots:
 
   ohash@2.0.11: {}
 
-  openai@6.6.0(ws@8.18.0)(zod@3.25.76):
+  openai@6.6.0(ws@8.18.0)(zod@4.1.12):
     optionalDependencies:
       ws: 8.18.0
-      zod: 3.25.76
+      zod: 4.1.12
 
   optionator@0.9.4:
     dependencies:
@@ -4035,3 +4055,5 @@ snapshots:
   zod@3.22.3: {}
 
   zod@3.25.76: {}
+
+  zod@4.1.12: {}

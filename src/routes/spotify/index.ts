@@ -4,7 +4,7 @@ import { cors } from "hono/cors";
 import type { Bindings } from "~/types/bindings";
 import type { SpotifyMyTopTrackProps } from "~/types/spotify";
 
-import { getSpotifyAccessToken } from "~/utils/spotify";
+import { getSpotifyAccessToken } from "~/libs/spotify";
 
 const spotifyRoute = new Hono<{ Bindings: Bindings }>()
   .use("*", cors())

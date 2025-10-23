@@ -7,7 +7,7 @@ import OpenAI from "openai";
 
 import type { Bindings } from "~/types/bindings";
 
-import { RESPONSE_FORMAT, SYSTEM_PROMPT } from "~/utils/constants";
+import { RESPONSE_FORMAT, SYSTEM_PROMPT } from "~/libs/constants";
 
 const aiRoute = new Hono<{ Bindings: Bindings }>()
   .use(
@@ -52,13 +52,14 @@ const aiRoute = new Hono<{ Bindings: Bindings }>()
     }
     const body = await c.req.json();
     if (!body || typeof body.prompt !== "string") {
-      return c.json({
-        body: JSON.stringify({
+      return c.json(
+        {
           type: "error",
           message: "Invalid request body.",
           variables: [],
-        }),
-      });
+        } as const,
+        400
+      );
     }
     const prompt = body.prompt;
     const { OPENAI_API_KEY, DISCORD_WEBHOOK } = env(c);

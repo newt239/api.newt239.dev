@@ -10,7 +10,7 @@ describe("getPageTitleFromUrl", async () => {
     expect(title).toBe("newt239.dev");
   });
   it("無効なURLが指定された場合はnullが返される", async () => {
-    const title = await getPageTitleFromUrl("https://example.invalid/");
+    const title = await getPageTitleFromUrl("invalid-url");
     expect(title).toBeNull();
   });
 });

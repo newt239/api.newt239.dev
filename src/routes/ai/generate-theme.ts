@@ -1,8 +1,8 @@
-import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import { env } from "hono/adapter";
 
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 import dayjs from "dayjs";
-import OpenAI from "openai";
+import OpenAI, { type APIError } from "openai";
 
 import type { Bindings } from "~/types/bindings";
 
@@ -15,23 +15,34 @@ const generateThemeSchema = z.object({
   }),
 });
 
-const themeVariableSchema = z.object({
-  name: z.string().openapi({ example: "primary-color" }),
-  value: z.string().openapi({ example: "#3498db" }),
-});
-
-const themeResponseSchema = z.object({
-  body: z.string().openapi({
-    example: JSON.stringify({
+const themeResponseSuccessSchema = z
+  .object({
+    type: z.string(),
+    message: z.string(),
+    variables: z.array(z.object({ name: z.string(), value: z.string() })),
+  })
+  .openapi({
+    example: {
       type: "success",
       message: "Successfully generated theme.",
       variables: [
         { name: "primary-color", value: "#3498db" },
         { name: "secondary-color", value: "#2ecc71" },
       ],
-    }),
-  }),
-});
+    },
+  });
+
+const themeResponseErrorSchema = z
+  .object({
+    type: z.string(),
+    error: z.object(),
+  })
+  .openapi({
+    example: {
+      type: "error",
+      message: "Failed to generate theme.",
+    },
+  });
 
 const route = createRoute({
   method: "post",
@@ -49,10 +60,18 @@ const route = createRoute({
     200: {
       content: {
         "application/json": {
-          schema: themeResponseSchema,
+          schema: themeResponseSuccessSchema,
         },
       },
       description: "テーマ生成結果",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: themeResponseErrorSchema,
+        },
+      },
+      description: "エラー",
     },
   },
   tags: ["AI"],
@@ -71,13 +90,13 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(
 
     // 24時間あたりのリクエストを100回に制限
     if (count > 100) {
-      return c.json({
-        body: JSON.stringify({
+      return c.json(
+        {
           type: "limited",
-          message: "Reached the limit of today's quota. Try again later.",
-          variables: [],
-        }),
-      });
+          error: "Reached the limit of today's quota. Try again later.",
+        },
+        400
+      );
     }
 
     const { prompt } = c.req.valid("json");
@@ -85,19 +104,66 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(
     const openai = new OpenAI({
       apiKey: OPENAI_API_KEY,
     });
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: SYSTEM_PROMPT,
+
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5-nano",
+        messages: [
+          {
+            role: "system",
+            content: SYSTEM_PROMPT,
+          },
+          { role: "user", content: prompt },
+        ],
+        response_format: RESPONSE_FORMAT,
+      });
+      const content = completion.choices[0].message.content;
+      if (!content) {
+        throw new Error("Failed to generate theme.");
+      }
+      // 結果をd1に保存
+      await c.env.DB.prepare(
+        "INSERT INTO themes (prompt, response) VALUES (?, ?)"
+      )
+        .bind(prompt, content)
+        .run();
+      const parsedContent: { [key: string]: string } = JSON.parse(content);
+      // ディスコードに通知
+      await fetch(DISCORD_WEBHOOK, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        { role: "user", content: prompt },
-      ],
-      response_format: RESPONSE_FORMAT,
-    });
-    const content = completion.choices[0].message.content;
-    if (!content) {
+        body: JSON.stringify({
+          username: "portfolio",
+          avatar_url: "https://newt239.dev/logo.png",
+          embeds: [
+            {
+              title: "New Theme Generated",
+              description: `Prompt: \`\`${prompt}\`\`\n\nResponse:\n\`\`\`json\n${JSON.stringify(parsedContent, null, "\t")}\n\`\`\``,
+              timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
+              color: 2664261,
+              footer: {
+                text: "© 2022-2025 newt",
+                icon_url: "https://newt239.dev/logo.png",
+              },
+            },
+          ],
+        }),
+      });
+      return c.json(
+        {
+          type: "success",
+          message: "Successfully generated theme.",
+          variables: Object.entries(parsedContent).map(([name, value]) => ({
+            name,
+            value,
+          })),
+        },
+        200
+      );
+    } catch (error) {
+      console.error(error);
       // エラー通知
       await fetch(DISCORD_WEBHOOK, {
         method: "POST",
@@ -109,8 +175,8 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(
           avatar_url: "https://newt239.dev/logo.png",
           embeds: [
             {
-              title: "Failed to Generate Theme",
-              description: `Prompt: \`\`${prompt}\`\``,
+              title: (error as APIError).code || "Unknown Error",
+              description: (error as APIError).message,
               timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
               color: 16711680,
               footer: {
@@ -121,54 +187,8 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(
           ],
         }),
       });
-      return c.json({
-        body: JSON.stringify({
-          type: "error",
-          message: "Failed to generate theme.",
-          variables: [],
-        }),
-      });
+      return c.json({ type: "error", error: error as object }, 400);
     }
-    // 結果をd1に保存
-    await c.env.DB.prepare(
-      "INSERT INTO themes (prompt, response) VALUES (?, ?)"
-    )
-      .bind(prompt, content)
-      .run();
-    const parsedContent: { [key: string]: string } = JSON.parse(content);
-    // ディスコードに通知
-    await fetch(DISCORD_WEBHOOK, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: "portfolio",
-        avatar_url: "https://newt239.dev/logo.png",
-        embeds: [
-          {
-            title: "New Theme Generated",
-            description: `Prompt: \`\`${prompt}\`\`\n\nResponse:\n\`\`\`json\n${JSON.stringify(parsedContent, null, "\t")}\n\`\`\``,
-            timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
-            color: 2664261,
-            footer: {
-              text: "© 2022-2025 newt",
-              icon_url: "https://newt239.dev/logo.png",
-            },
-          },
-        ],
-      }),
-    });
-    return c.json({
-      body: JSON.stringify({
-        type: "success",
-        message: "Successfully generated theme.",
-        variables: Object.entries(parsedContent).map(([name, value]) => ({
-          name,
-          value,
-        })),
-      }),
-    });
   }
 );
 

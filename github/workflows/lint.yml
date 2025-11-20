@@ -1,3 +1,8 @@
+name: Lint
+on:
+  pull_request:
+    branches:
+      - main
 jobs:
   oxlint:
     name: Lint

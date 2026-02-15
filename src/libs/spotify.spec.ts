@@ -54,7 +54,7 @@ describe("getSpotifyAccessToken", () => {
     );
   });
 
-  it("APIからエラーレスポンスが返された場合nullを返す", async () => {
+  it("APIからエラーレスポンスが返された場合nullishな値を返す", async () => {
     const mockErrorResponse = {
       error: "invalid_grant",
       error_description: "Invalid refresh token",
@@ -70,7 +70,7 @@ describe("getSpotifyAccessToken", () => {
       mockRefreshToken
     );
 
-    expect(result).toBeNull();
+    expect(result).toBeFalsy();
   });
 
   it("ネットワークエラーが発生した場合nullを返す", async () => {

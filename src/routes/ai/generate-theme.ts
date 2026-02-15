@@ -6,12 +6,35 @@ import OpenAI, { type APIError } from "openai";
 
 import type { Bindings } from "~/types/bindings";
 
-import { RESPONSE_FORMAT, SYSTEM_PROMPT } from "~/libs/constants";
+import {
+  buildResponseFormat,
+  buildSystemPrompt,
+  defaultRequiredVariables,
+} from "~/libs/constants";
+
+const themeVariableSchema = z.object({
+  name: z.string().openapi({
+    example: "--color-text",
+    description: "CSS変数名",
+  }),
+  description: z.string().openapi({
+    example: "Main text color",
+    description: "変数の説明",
+  }),
+  defaultValue: z.string().openapi({
+    example: "74 74 74",
+    description: "デフォルト値",
+  }),
+});
 
 const generateThemeSchema = z.object({
   prompt: z.string().min(1, "Prompt is required").openapi({
     example: "夏の海辺をイメージしたテーマ",
     description: "テーマ生成のためのプロンプト",
+  }),
+  requiredVariables: z.array(themeVariableSchema).optional().openapi({
+    description:
+      "生成するCSS変数の定義。指定しない場合はデフォルトの変数セットが使用されます。",
   }),
 });
 
@@ -99,7 +122,8 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(
       );
     }
 
-    const { prompt } = c.req.valid("json");
+    const { prompt, requiredVariables } = c.req.valid("json");
+    const variables = requiredVariables ?? defaultRequiredVariables;
     const { OPENAI_API_KEY, DISCORD_WEBHOOK } = env(c);
     const openai = new OpenAI({
       apiKey: OPENAI_API_KEY,
@@ -107,15 +131,15 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-5-nano",
+        model: "gpt-4.1-nano",
         messages: [
           {
             role: "system",
-            content: SYSTEM_PROMPT,
+            content: buildSystemPrompt(variables),
           },
           { role: "user", content: prompt },
         ],
-        response_format: RESPONSE_FORMAT,
+        response_format: buildResponseFormat(variables),
       });
       const content = completion.choices[0].message.content;
       if (!content) {

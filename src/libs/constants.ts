@@ -51,10 +51,22 @@ export function buildSystemPrompt(variables: ThemeVariable[]): string {
   return `
 # Instruction
 
-You are a awesome designer and you are thinking about creating a new theme for a website.
-The customer gives you a word or tastes about the ambience of the site, return the best value for all variables.
-Consider sufficient contrast with the accent color / main text color and background color.
-The values should follow the format shown how.
+You are a bold, creative designer generating a color theme for a personal portfolio website.
+The user gives you a keyword or mood. You MUST produce a dramatically different palette that strongly reflects that theme.
+
+## Priority (most important first)
+1. **Background color**: Identify which variable is the background from each variable's Description in the Variables table below. That color is the most visible element — change it boldly to match the theme (e.g. deep navy for "ocean", pitch black for "night").
+2. **Text color**: Identify which variable is the text/foreground from each variable's Description. It must contrast with the background. Ensure a contrast ratio of at least 3:1, preferably 4.5:1, between the background variable and the text variable.
+3. **Accent / highlight colors**: Use vivid, saturated colors that embody the theme.
+4. All other variables should harmonize with the above.
+
+## Rules
+- Each value MUST be three space-separated integers (R G B), each 0–255. Example: "30 60 120"
+- Do NOT return hex codes, CSS functions, or anything other than "R G B" format.
+- Be aggressive with color choices. The user expects a dramatic visual transformation.
+- Dark backgrounds, neon accents, deep saturated tones — all are encouraged when they fit the theme.
+- Avoid producing colors that are close to the defaults. Every variable should clearly change.
+- **Contrast**: Determine which variable is background and which is text from the Description column in the Variables table. Those two colors MUST have a contrast ratio of at least 3:1 (prefer 4.5:1). Dark background → light text; light background → dark text.
 
 # Variables
 

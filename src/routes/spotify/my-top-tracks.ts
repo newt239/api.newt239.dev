@@ -2,7 +2,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 
 import type { Bindings } from "~/types/bindings";
 
-import { createSpotifyClient } from "~/clients/spotify";
+import { getSpotifyAccessToken } from "~/libs/spotify";
 
 const topTrackSchema = z.object({
   name: z.string().openapi({ example: "夜に駆ける" }),
@@ -42,25 +42,52 @@ const route = createRoute({
 const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(
   route,
   async (c) => {
-    const client = createSpotifyClient(
+    const accessToken = await getSpotifyAccessToken(
       c.env.SPOTIFY_CLIENT_ID,
-      c.env.SPOTIFY_CLIENT_SECRET
+      c.env.SPOTIFY_CLIENT_SECRET,
+      c.env.REFRESH_TOKEN
     );
-    const { items } = await client.currentUser.topItems("tracks", "short_term");
-    if (!items) {
+    if (!accessToken) {
       return c.json([]);
     }
-    const returnData = items.map((track) => {
-      return {
-        name: track.name,
-        artists: track.artists.map((artist) => artist.name),
-        thumbnail: track.album.images[0].url,
-        preview: track.preview_url ? track.preview_url : null,
-        duration: track.duration_ms,
-        popularity: track.popularity,
-        link: track.external_urls.spotify,
-      };
-    });
+
+    const res = await fetch(
+      "https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=50",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    if (!res.ok) {
+      return c.json([]);
+    }
+
+    const data = (await res.json()) as {
+      items: Array<{
+        name: string;
+        artists: Array<{ name: string }>;
+        album: { images: Array<{ url: string }> };
+        preview_url: string | null;
+        duration_ms: number;
+        popularity: number;
+        external_urls: { spotify: string };
+      }>;
+    };
+
+    if (!data.items) {
+      return c.json([]);
+    }
+
+    const returnData = data.items.map((track) => ({
+      name: track.name,
+      artists: track.artists.map((artist) => artist.name),
+      thumbnail: track.album.images[0].url,
+      preview: track.preview_url ?? null,
+      duration: track.duration_ms,
+      popularity: track.popularity,
+      link: track.external_urls.spotify,
+    }));
     return c.json(returnData);
   }
 );

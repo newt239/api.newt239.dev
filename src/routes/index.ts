@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 
 import type { Bindings } from "~/types/bindings";
 
@@ -13,7 +14,27 @@ import openApiRoute from "~/routes/openapi";
 import myTopTracksRoute from "~/routes/spotify/my-top-tracks";
 import searchRoute from "~/routes/spotify/search";
 
+/** Cloudflare Pages のプレビューURL（例: https://811319f9.newt239-dev.pages.dev） */
+const PREVIEW_ORIGIN_REGEX = /^https:\/\/[a-zA-Z0-9-]+\.newt239-dev\.pages\.dev$/;
+
 const app = new Hono<{ Bindings: Bindings }>()
+  .use(
+    "*",
+    cors({
+      origin: (origin) => {
+        if (
+          origin === "https://newt239.dev" ||
+          origin === "http://localhost:3000" ||
+          PREVIEW_ORIGIN_REGEX.test(origin)
+        ) {
+          return origin;
+        }
+        return null;
+      },
+      allowMethods: ["GET", "POST", "OPTIONS"],
+      allowHeaders: ["Content-Type"],
+    })
+  )
   .get("/", (c) => c.text("🔥"))
   // Spotify routes
   .route("/spotify/my-top-tracks", myTopTracksRoute)

@@ -1,4 +1,10 @@
-export const requiredVariables = [
+export type ThemeVariable = {
+  name: string;
+  description: string;
+  defaultValue: string;
+};
+
+export const defaultRequiredVariables: ThemeVariable[] = [
   {
     name: "--color-text",
     description: "Main text color",
@@ -41,7 +47,8 @@ export const requiredVariables = [
   },
 ];
 
-export const SYSTEM_PROMPT = `
+export function buildSystemPrompt(variables: ThemeVariable[]): string {
+  return `
 # Instruction
 
 You are a awesome designer and you are thinking about creating a new theme for a website.
@@ -53,26 +60,29 @@ The values should follow the format shown how.
 
 | Name | Description | Default Value |
 | ---- | ----------- | ------------- |
-${requiredVariables
+${variables
   .map(
-    ({ name, description, defaultValue }) => `
-| ${name} | ${description} | ${defaultValue} |`
+    ({ name, description, defaultValue }) =>
+      `| ${name} | ${description} | ${defaultValue} |`
   )
   .join("\n")}
 `;
+}
 
-export const RESPONSE_FORMAT = {
-  type: "json_schema",
-  json_schema: {
-    name: "css_variables",
-    schema: {
-      type: "object",
-      properties: Object.fromEntries(
-        requiredVariables.map((variable) => [variable.name, { type: "string" }])
-      ),
-      required: requiredVariables.map((variable) => variable.name),
-      additionalProperties: false,
+export function buildResponseFormat(variables: ThemeVariable[]) {
+  return {
+    type: "json_schema",
+    json_schema: {
+      name: "css_variables",
+      schema: {
+        type: "object",
+        properties: Object.fromEntries(
+          variables.map((variable) => [variable.name, { type: "string" }])
+        ),
+        required: variables.map((variable) => variable.name),
+        additionalProperties: false,
+      },
+      strict: true,
     },
-    strict: true,
-  },
-} as const;
+  } as const;
+}

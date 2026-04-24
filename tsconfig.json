@@ -1,28 +1,23 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "strict": true,
-    "lib": ["ESNext", "DOM"],
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["esnext", "dom"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "baseUrl": "./",
     "paths": {
-      "~/*": ["src/*"]
+      "~/*": ["./src/*"]
     },
-    "types": [
-      "vitest/globals",
-      "@cloudflare/workers-types",
-      "@cloudflare/vitest-pool-workers"
-    ],
+    "types": ["vitest/globals", "@cloudflare/workers-types", "@cloudflare/vitest-pool-workers"],
+    "strict": true,
+    "noEmit": true,
     "resolveJsonModule": true,
     "allowJs": true,
-    "checkJs": false,
-    "noEmit": true,
     "isolatedModules": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["src/**/*", "vitest.config.ts"],
+  "exclude": ["node_modules"]
 }

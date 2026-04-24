@@ -1,8 +1,8 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 
-import type { Bindings } from "~/types/bindings";
-
 import { createSpotifyClient } from "~/clients/spotify";
+
+import type { Bindings } from "~/types/bindings";
 
 const searchQuerySchema = z.object({
   query: z
@@ -34,7 +34,7 @@ const spotifyArtistSchema = z.object({
       url: z.string(),
       height: z.number().nullable(),
       width: z.number().nullable(),
-    })
+    }),
   ),
   name: z.string(),
   popularity: z.number(),
@@ -75,17 +75,11 @@ const route = createRoute({
   description: "指定されたクエリでSpotifyのアーティストを検索します",
 });
 
-const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(
-  route,
-  async (c) => {
-    const { query } = c.req.valid("query");
-    const client = createSpotifyClient(
-      c.env.SPOTIFY_CLIENT_ID,
-      c.env.SPOTIFY_CLIENT_SECRET
-    );
-    const result = await client.search(query, ["artist"]);
-    return c.json(result);
-  }
-);
+const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) => {
+  const { query } = c.req.valid("query");
+  const client = createSpotifyClient(c.env.SPOTIFY_CLIENT_ID, c.env.SPOTIFY_CLIENT_SECRET);
+  const result = await client.search(query, ["artist"]);
+  return c.json(result);
+});
 
 export default app;

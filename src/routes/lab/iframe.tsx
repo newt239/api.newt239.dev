@@ -1,10 +1,10 @@
-import { Hono } from "hono";
-import type { FC } from "hono/jsx";
-
 import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";
 import { z } from "zod";
 
 import type { Bindings } from "~/types/bindings";
+
+import type { FC } from "hono/jsx";
 
 const IFrameComponent: FC<{ url: string }> = (props) => {
   const title = "iframe demo";
@@ -33,7 +33,7 @@ const app = new Hono<{ Bindings: Bindings }>().get(
     const { url: param } = c.req.valid("param");
     const url = URL.canParse(param) ? param : "https://newt239.dev/";
     return c.html(<IFrameComponent url={url} />);
-  }
+  },
 );
 
 export default app;

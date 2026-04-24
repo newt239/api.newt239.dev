@@ -1,16 +1,12 @@
+import { defineWorkersProject, readD1Migrations } from "@cloudflare/vitest-pool-workers/config";
 import fs from "node:fs";
 import path from "node:path";
-
-import {
-  defineWorkersProject,
-  readD1Migrations,
-} from "@cloudflare/vitest-pool-workers/config";
 
 export default defineWorkersProject(async () => {
   const migrationsPath = path.join(__dirname, "db");
   const migrations = await readD1Migrations(migrationsPath);
 
-  // .env.dev から環境変数を無理やり読み込む
+  // .dev.vars から環境変数を無理やり読み込む
   const devVarsPath = path.join(__dirname, ".dev.vars");
   const envVars: Record<string, string> = {};
 
@@ -41,7 +37,7 @@ export default defineWorkersProject(async () => {
           isolatedStorage: false,
           miniflare: {
             compatibilityFlags: ["nodejs_compat"],
-            compatibilityDate: "2024-04-01",
+            compatibilityDate: "2024-09-23",
             d1Databases: ["DB"],
             bindings: {
               TEST_MIGRATIONS: migrations,

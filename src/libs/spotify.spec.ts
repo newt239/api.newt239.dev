@@ -31,27 +31,20 @@ describe("getSpotifyAccessToken", () => {
       json: vi.fn().mockResolvedValue(mockResponse),
     });
 
-    const result = await getSpotifyAccessToken(
-      mockClientId,
-      mockClientSecret,
-      mockRefreshToken
-    );
+    const result = await getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken);
 
     expect(result).toBe(mockAccessToken);
-    expect(mockFetch).toHaveBeenCalledWith(
-      "https://accounts.spotify.com/api/token",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${btoa(`${mockClientId}:${mockClientSecret}`)}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          grant_type: "refresh_token",
-          refresh_token: mockRefreshToken,
-        }),
-      }
-    );
+    expect(mockFetch).toHaveBeenCalledWith("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${btoa(`${mockClientId}:${mockClientSecret}`)}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: mockRefreshToken,
+      }),
+    });
   });
 
   it("APIからエラーレスポンスが返された場合nullishな値を返す", async () => {
@@ -64,27 +57,17 @@ describe("getSpotifyAccessToken", () => {
       json: vi.fn().mockResolvedValue(mockErrorResponse),
     });
 
-    const result = await getSpotifyAccessToken(
-      mockClientId,
-      mockClientSecret,
-      mockRefreshToken
-    );
+    const result = await getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken);
 
     expect(result).toBeFalsy();
   });
 
   it("ネットワークエラーが発生した場合nullを返す", async () => {
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
-    const result = await getSpotifyAccessToken(
-      mockClientId,
-      mockClientSecret,
-      mockRefreshToken
-    );
+    const result = await getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken);
 
     expect(result).toBeNull();
     expect(consoleErrorSpy).toHaveBeenCalledWith(new Error("Network error"));
@@ -93,19 +76,13 @@ describe("getSpotifyAccessToken", () => {
   });
 
   it("JSONパースエラーが発生した場合nullを返す", async () => {
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     mockFetch.mockResolvedValueOnce({
       json: vi.fn().mockRejectedValue(new Error("JSON parse error")),
     });
 
-    const result = await getSpotifyAccessToken(
-      mockClientId,
-      mockClientSecret,
-      mockRefreshToken
-    );
+    const result = await getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken);
 
     expect(result).toBeNull();
     expect(consoleErrorSpy).toHaveBeenCalledWith(new Error("JSON parse error"));
@@ -120,11 +97,7 @@ describe("getSpotifyAccessToken", () => {
       json: vi.fn().mockResolvedValue(mockResponse),
     });
 
-    await getSpotifyAccessToken(
-      mockClientId,
-      mockClientSecret,
-      mockRefreshToken
-    );
+    await getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken);
 
     const expectedAuth = btoa(`${mockClientId}:${mockClientSecret}`);
     expect(mockFetch).toHaveBeenCalledWith(
@@ -133,7 +106,7 @@ describe("getSpotifyAccessToken", () => {
         headers: expect.objectContaining({
           Authorization: `Basic ${expectedAuth}`,
         }),
-      })
+      }),
     );
   });
 
@@ -144,11 +117,7 @@ describe("getSpotifyAccessToken", () => {
       json: vi.fn().mockResolvedValue(mockResponse),
     });
 
-    await getSpotifyAccessToken(
-      mockClientId,
-      mockClientSecret,
-      mockRefreshToken
-    );
+    await getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken);
 
     const expectedBody = new URLSearchParams({
       grant_type: "refresh_token",
@@ -159,7 +128,7 @@ describe("getSpotifyAccessToken", () => {
       expect.any(String),
       expect.objectContaining({
         body: expectedBody,
-      })
+      }),
     );
   });
 });

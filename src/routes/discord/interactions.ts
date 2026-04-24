@@ -1,5 +1,3 @@
-import { Hono } from "hono";
-
 import {
   type APIInteraction,
   type APIInteractionResponse,
@@ -7,23 +5,18 @@ import {
   InteractionType,
 } from "discord-api-types/payloads/v10";
 import { verifyKey } from "discord-interactions";
+import { Hono } from "hono";
+
+import { BANDORI_COMMAND, INVITE_COMMAND, PJSEKAI_COMMAND } from "~/routes/discord/_commands";
 
 import type { Bindings } from "~/types/bindings";
-
-import {
-  BANDORI_COMMAND,
-  INVITE_COMMAND,
-  PJSEKAI_COMMAND,
-} from "~/routes/discord/_commands";
 
 const app = new Hono<{ Bindings: Bindings }>().post("/", async (c) => {
   const signature = c.req.header("x-signature-ed25519");
   const timestamp = c.req.header("x-signature-timestamp");
   const body = await c.req.text();
   const isValidRequest =
-    signature &&
-    timestamp &&
-    verifyKey(body, signature, timestamp, c.env.DISCORD_PUBLIC_KEY);
+    signature && timestamp && verifyKey(body, signature, timestamp, c.env.DISCORD_PUBLIC_KEY);
   if (!isValidRequest) {
     return c.json({ error: "Bad request signature." } as const, 401);
   }
@@ -54,9 +47,7 @@ const app = new Hono<{ Bindings: Bindings }>().post("/", async (c) => {
       }
       case PJSEKAI_COMMAND.name.toLowerCase(): {
         const cards = (await (
-          await fetch(
-            "https://sekai-world.github.io/sekai-master-db-diff/cards.json"
-          )
+          await fetch("https://sekai-world.github.io/sekai-master-db-diff/cards.json")
         ).json()) as {
           id: string;
           prefix: string;
@@ -64,9 +55,7 @@ const app = new Hono<{ Bindings: Bindings }>().post("/", async (c) => {
           cardRarityType: string;
         }[];
         const filteredCards = cards.filter(
-          (card) =>
-            card.cardRarityType !== "rarity_1" &&
-            card.cardRarityType !== "rarity_2"
+          (card) => card.cardRarityType !== "rarity_1" && card.cardRarityType !== "rarity_2",
         );
         const n = Math.floor(Math.random() * filteredCards.length);
         const card = filteredCards[n];
@@ -79,9 +68,7 @@ const app = new Hono<{ Bindings: Bindings }>().post("/", async (c) => {
         } as const);
       }
       case BANDORI_COMMAND.name.toLowerCase(): {
-        const data = (await (
-          await fetch("https://bestdori.com/api/cards/all.5.json")
-        ).json()) as {
+        const data = (await (await fetch("https://bestdori.com/api/cards/all.5.json")).json()) as {
           [key: string]: {
             rarity: number;
             resourceSetName: string;
@@ -112,7 +99,7 @@ const app = new Hono<{ Bindings: Bindings }>().post("/", async (c) => {
           {
             error: "Unknown Type",
           },
-          400
+          400,
         );
     }
   }
@@ -122,7 +109,7 @@ const app = new Hono<{ Bindings: Bindings }>().post("/", async (c) => {
     {
       error: "Unknown Type",
     } as const,
-    400
+    400,
   );
 });
 

@@ -1,12 +1,12 @@
 import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
 
-import type { Bindings } from "~/types/bindings";
-
 import generateThemeRoute from "~/routes/ai/generate-theme";
 import commandsRoute from "~/routes/discord/commands";
 import myTopTracksRoute from "~/routes/spotify/my-top-tracks";
 import searchRoute from "~/routes/spotify/search";
+
+import type { Bindings } from "~/types/bindings";
 
 const app = new OpenAPIHono<{ Bindings: Bindings }>();
 

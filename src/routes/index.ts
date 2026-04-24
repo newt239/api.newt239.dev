@@ -1,8 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-import type { Bindings } from "~/types/bindings";
-
 import generateThemeRoute from "~/routes/ai/generate-theme";
 import commandsRoute from "~/routes/discord/commands";
 import interactionsRoute from "~/routes/discord/interactions";
@@ -13,6 +11,8 @@ import postRoute from "~/routes/lab/post";
 import openApiRoute from "~/routes/openapi";
 import myTopTracksRoute from "~/routes/spotify/my-top-tracks";
 import searchRoute from "~/routes/spotify/search";
+
+import type { Bindings } from "~/types/bindings";
 
 /** Cloudflare Pages のプレビューURL（例: https://811319f9.newt239-dev.pages.dev） */
 const PREVIEW_ORIGIN_REGEX = /^https:\/\/[a-zA-Z0-9-]+\.newt239-dev\.pages\.dev$/;
@@ -33,7 +33,7 @@ const app = new Hono<{ Bindings: Bindings }>()
       },
       allowMethods: ["GET", "POST", "OPTIONS"],
       allowHeaders: ["Content-Type"],
-    })
+    }),
   )
   .get("/", (c) => c.text("🔥"))
   // Spotify routes

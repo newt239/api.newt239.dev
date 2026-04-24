@@ -18,11 +18,7 @@ describe("getPageTitleFromUrl", () => {
   it("ページのタイトルが取得できる", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      text: vi
-        .fn()
-        .mockResolvedValue(
-          "<html><head><title>newt239.dev</title></head></html>"
-        ),
+      text: vi.fn().mockResolvedValue("<html><head><title>newt239.dev</title></head></html>"),
     });
     const title = await getPageTitleFromUrl("https://newt239.dev/");
     expect(title).toBe("newt239.dev");

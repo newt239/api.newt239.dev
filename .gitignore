@@ -5,3 +5,4 @@ node_modules/
 .dev.vars
 test.js
 wrangler.toml
+.DS_Store

@@ -1,9 +1,10 @@
 import { Hono } from "hono";
 
-import type { RESTPutAPIApplicationCommandsResult } from "discord-api-types/v10";
+import commands from "~/routes/discord/_commands";
+
 import type { Bindings } from "~/types/bindings";
 
-import commands from "~/routes/discord/_commands";
+import type { RESTPutAPIApplicationCommandsResult } from "discord-api-types/v10";
 
 const app = new Hono<{ Bindings: Bindings }>().post("/", async (c) => {
   const token = c.env.DISCORD_TOKEN;
@@ -33,7 +34,7 @@ const app = new Hono<{ Bindings: Bindings }>().post("/", async (c) => {
       type: "error",
       message: text,
     } as const,
-    500
+    500,
   );
 });
 

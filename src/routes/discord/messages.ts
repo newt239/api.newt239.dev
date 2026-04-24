@@ -1,6 +1,5 @@
-import { Hono } from "hono";
-
 import { zValidator } from "@hono/zod-validator";
+import { Hono } from "hono";
 import { z } from "zod";
 
 import type { Bindings } from "~/types/bindings";
@@ -47,19 +46,16 @@ const app = new Hono<{ Bindings: Bindings }>().get(
             error: "メッセージ取得に失敗しました",
             details: errorData,
           } as const,
-          response.status as 400 | 401 | 403 | 404 | 500
+          response.status as 400 | 401 | 403 | 404 | 500,
         );
       }
 
       const messages = (await response.json()) as unknown[];
       return c.json(messages);
     } catch {
-      return c.json(
-        { error: "内部サーバーエラーが発生しました" } as const,
-        500
-      );
+      return c.json({ error: "内部サーバーエラーが発生しました" } as const, 500);
     }
-  }
+  },
 );
 
 export default app;

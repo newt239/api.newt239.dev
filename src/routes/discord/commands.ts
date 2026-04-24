@@ -33,28 +33,24 @@ const route = createRoute({
   },
   tags: ["Discord"],
   summary: "Discordコマンド一覧を取得",
-  description:
-    "登録されているDiscordアプリケーションのスラッシュコマンド一覧を取得します",
+  description: "登録されているDiscordアプリケーションのスラッシュコマンド一覧を取得します",
 });
 
-const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(
-  route,
-  async (c) => {
-    const token = c.env.DISCORD_TOKEN;
-    const applicationId = c.env.DISCORD_APPLICATION_ID;
-    const url = `https://discord.com/api/v10/applications/${applicationId}/commands`;
+const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) => {
+  const token = c.env.DISCORD_TOKEN;
+  const applicationId = c.env.DISCORD_APPLICATION_ID;
+  const url = `https://discord.com/api/v10/applications/${applicationId}/commands`;
 
-    const response = await fetch(url, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bot ${token}`,
-      },
-      method: "GET",
-    });
-    const data: object = await response.json();
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bot ${token}`,
+    },
+    method: "GET",
+  });
+  const data: object = await response.json();
 
-    return c.json(data);
-  }
-);
+  return c.json(data);
+});
 
 export default app;

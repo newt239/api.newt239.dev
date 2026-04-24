@@ -73,10 +73,7 @@ The user gives you a keyword or mood. You MUST produce a dramatically different 
 | Name | Description | Default Value |
 | ---- | ----------- | ------------- |
 ${variables
-  .map(
-    ({ name, description, defaultValue }) =>
-      `| ${name} | ${description} | ${defaultValue} |`
-  )
+  .map(({ name, description, defaultValue }) => `| ${name} | ${description} | ${defaultValue} |`)
   .join("\n")}
 `;
 }
@@ -89,7 +86,7 @@ export function buildResponseFormat(variables: ThemeVariable[]) {
       schema: {
         type: "object",
         properties: Object.fromEntries(
-          variables.map((variable) => [variable.name, { type: "string" }])
+          variables.map((variable) => [variable.name, { type: "string" }]),
         ),
         required: variables.map((variable) => variable.name),
         additionalProperties: false,

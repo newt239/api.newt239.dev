@@ -89,7 +89,7 @@ const app = new Hono<{ Bindings: Bindings }>().post("/", async (c) => {
         return c.json<APIInteractionResponse>({
           type: InteractionResponseType.ChannelMessageWithSource,
           data: {
-            content: `${card.prefix}\n\n${imageUrl}`,
+            content: `${card.prefix[0]}\n\n${imageUrl}`,
           },
         } as const);
       }

@@ -1,6 +1,12 @@
 {
   "permissions": {
     "allow": ["Bash(pnpm test:*)"],
-    "deny": []
+    "deny": ["Read(./.dev.vars)", "Read(**/.dev.vars)"]
+  },
+  "sandbox": {
+    "enabled": true,
+    "filesystem": {
+      "denyRead": ["./.dev.vars", "**/.dev.vars"]
+    }
   }
 }

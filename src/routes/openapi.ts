@@ -2,6 +2,7 @@ import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
 
 import generateThemeRoute from "~/routes/ai/generate-theme";
+import libraryRoute from "~/routes/annict/library";
 import commandsRoute from "~/routes/discord/commands";
 import myTopTracksRoute from "~/routes/spotify/my-top-tracks";
 import searchRoute from "~/routes/spotify/search";
@@ -15,6 +16,7 @@ app.route("/spotify/my-top-tracks", myTopTracksRoute);
 app.route("/spotify/search", searchRoute);
 app.route("/discord/commands", commandsRoute);
 app.route("/ai/generate-theme", generateThemeRoute);
+app.route("/annict/library", libraryRoute);
 
 // OpenAPI仕様書のエンドポイント
 app.doc("/openapi.json", {

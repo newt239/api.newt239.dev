@@ -1,12 +1,12 @@
-import { defineWorkersProject, readD1Migrations } from "@cloudflare/vitest-pool-workers/config";
+import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-pool-workers";
 import fs from "node:fs";
 import path from "node:path";
+import { defineConfig } from "vitest/config";
 
-export default defineWorkersProject(async () => {
+export default defineConfig(async () => {
   const migrationsPath = path.join(__dirname, "db");
   const migrations = await readD1Migrations(migrationsPath);
 
-  // .dev.vars から環境変数を無理やり読み込む
   const devVarsPath = path.join(__dirname, ".dev.vars");
   const envVars: Record<string, string> = {};
 
@@ -24,28 +24,23 @@ export default defineWorkersProject(async () => {
   }
 
   return {
+    plugins: [
+      cloudflareTest({
+        miniflare: {
+          compatibilityFlags: ["nodejs_compat"],
+          compatibilityDate: "2024-09-23",
+          d1Databases: ["DB"],
+          bindings: {
+            TEST_MIGRATIONS: migrations,
+            ...envVars,
+          },
+        },
+      }),
+    ],
     test: {
       setupFiles: ["./src/tests/apply-migrations.ts"],
       globals: true,
       includeTaskLocation: true,
-      poolOptions: {
-        wrangler: {
-          configPath: "./wrangler.toml",
-        },
-        workers: {
-          singleWorker: true,
-          isolatedStorage: false,
-          miniflare: {
-            compatibilityFlags: ["nodejs_compat"],
-            compatibilityDate: "2024-09-23",
-            d1Databases: ["DB"],
-            bindings: {
-              TEST_MIGRATIONS: migrations,
-              ...envVars,
-            },
-          },
-        },
-      },
     },
     resolve: {
       alias: {

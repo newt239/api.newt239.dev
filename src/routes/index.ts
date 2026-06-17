@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import generateThemeRoute from "~/routes/ai/generate-theme";
+import libraryRoute from "~/routes/annict/library";
 import commandsRoute from "~/routes/discord/commands";
 import interactionsRoute from "~/routes/discord/interactions";
 import messagesRoute from "~/routes/discord/messages";
@@ -46,6 +47,8 @@ const app = new Hono<{ Bindings: Bindings }>()
   .route("/discord/channels", messagesRoute)
   // AI routes
   .route("/ai/generate-theme", generateThemeRoute)
+  // Annict routes
+  .route("/annict/library", libraryRoute)
   // Lab routes
   .route("/lab/post", postRoute)
   .route("/lab/iframe", iframeRoute)

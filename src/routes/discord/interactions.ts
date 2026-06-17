@@ -3,7 +3,7 @@ import {
   type APIInteractionResponse,
   InteractionResponseType,
   InteractionType,
-} from "discord-api-types/payloads/v10";
+} from "discord-api-types/v10";
 import { verifyKey } from "discord-interactions";
 import { Hono } from "hono";
 

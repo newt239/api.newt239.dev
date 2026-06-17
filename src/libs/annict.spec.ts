@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getAnnictLibraryEntries } from "./annict";
 
-// グローバルなfetchをモック
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
@@ -78,6 +77,7 @@ describe("getAnnictLibraryEntries", () => {
     expect(callBody.query).toContain("libraryEntries");
     expect(callBody.variables).toEqual({
       states: ["WATCHED"],
+      seasons: null,
       first: 10,
       after: "cursorABC",
     });
@@ -92,6 +92,29 @@ describe("getAnnictLibraryEntries", () => {
 
     const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(callBody.variables.after).toBeNull();
+  });
+
+  it("seasonsを指定するとvariablesに含めて送信する", async () => {
+    mockFetch.mockResolvedValueOnce({
+      json: vi.fn().mockResolvedValue({ data: { viewer: null } }),
+    });
+
+    await getAnnictLibraryEntries(mockToken, ["WATCHING"], 50, undefined, ["2026-spring"]);
+
+    const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(callBody.query).toContain("$seasons: [String!]");
+    expect(callBody.variables.seasons).toEqual(["2026-spring"]);
+  });
+
+  it("seasonsが未指定の場合はnullとして送信する", async () => {
+    mockFetch.mockResolvedValueOnce({
+      json: vi.fn().mockResolvedValue({ data: { viewer: null } }),
+    });
+
+    await getAnnictLibraryEntries(mockToken, ["WATCHING"], 50);
+
+    const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(callBody.variables.seasons).toBeNull();
   });
 
   it("ネットワークエラーが発生した場合nullを返す", async () => {

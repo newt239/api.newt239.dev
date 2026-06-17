@@ -47,7 +47,6 @@ const app = new Hono<{ Bindings: Bindings }>()
   .route("/discord/channels", messagesRoute)
   // AI routes
   .route("/ai/generate-theme", generateThemeRoute)
-  // Annict routes
   .route("/annict/library", libraryRoute)
   // Lab routes
   .route("/lab/post", postRoute)

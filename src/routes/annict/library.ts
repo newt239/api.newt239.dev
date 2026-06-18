@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 
-import { getAnnictLibraryEntries } from "~/libs/annict";
+import { getLibraryWorks } from "~/libs/annict";
 
 import type { Bindings } from "~/types/bindings";
 
@@ -124,110 +124,19 @@ const route = createRoute({
     "Annictで自分が登録している作品をステータス別（見ている/見たなど）に取得します。stateは任意で未指定時はwatching。orderByで並び替え、currentSeason=trueで今期の作品のみに絞り込めます。カーソルページングに対応しています。",
 });
 
-const emptyResponse = {
-  works: [],
-  pageInfo: { endCursor: null, hasNextPage: false },
-};
-
-const SEASON_NAME_ORDER: Record<string, number> = {
-  WINTER: 1,
-  SPRING: 2,
-  SUMMER: 3,
-  AUTUMN: 4,
-};
-
-const getCurrentSeasonSlug = (now: Date): string => {
-  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  const year = jst.getUTCFullYear();
-  const month = jst.getUTCMonth() + 1;
-  const name = month <= 3 ? "winter" : month <= 6 ? "spring" : month <= 9 ? "summer" : "autumn";
-  return `${year}-${name}`;
-};
-
-type SortableWork = {
-  annictId: number;
-  watchersCount: number;
-  titleEn: string | null;
-  seasonYear: number | null;
-  seasonName: string | null;
-};
-
-const orderByValue = (
-  work: SortableWork,
-  orderBy: "annictId" | "watchersCount" | "titleEn" | "season",
-): number | string | null => {
-  switch (orderBy) {
-    case "annictId":
-      return work.annictId;
-    case "watchersCount":
-      return work.watchersCount;
-    case "titleEn":
-      return work.titleEn;
-    case "season":
-      return work.seasonYear === null
-        ? null
-        : work.seasonYear * 10 + (SEASON_NAME_ORDER[work.seasonName ?? ""] ?? 0);
-  }
-};
-
-const sortWorks = <T extends SortableWork>(
-  works: T[],
-  orderBy: "annictId" | "watchersCount" | "titleEn" | "season",
-  order: "asc" | "desc",
-): T[] => {
-  const direction = order === "desc" ? -1 : 1;
-  return [...works].sort((a, b) => {
-    const av = orderByValue(a, orderBy);
-    const bv = orderByValue(b, orderBy);
-    if (av === null && bv === null) return 0;
-    if (av === null) return 1;
-    if (bv === null) return -1;
-    if (typeof av === "string" && typeof bv === "string") {
-      return av.localeCompare(bv) * direction;
-    }
-    return ((av as number) - (bv as number)) * direction;
-  });
-};
-
 const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) => {
   const { state, orderBy, order, currentSeason, first, after } = c.req.valid("query");
 
-  const seasons = currentSeason === "true" ? [getCurrentSeasonSlug(new Date())] : undefined;
-
-  const result = await getAnnictLibraryEntries(
-    c.env.ANNICT_API_TOKEN,
-    [state.toUpperCase()],
+  const result = await getLibraryWorks(c.env.ANNICT_API_TOKEN, {
+    state,
+    orderBy,
+    order,
+    currentSeason: currentSeason === "true",
     first,
     after,
-    seasons,
-  );
+  });
 
-  if (!result || result.errors || !result.data?.viewer) {
-    if (result?.errors) {
-      console.error(result.errors);
-    }
-    return c.json(emptyResponse);
-  }
-
-  const { nodes, pageInfo } = result.data.viewer.libraryEntries;
-
-  const mappedWorks = nodes.map((node) => ({
-    annictId: node.work.annictId,
-    title: node.work.title,
-    titleEn: node.work.titleEn || null,
-    seasonName: node.work.seasonName ?? null,
-    seasonYear: node.work.seasonYear ?? null,
-    imageUrl: node.work.image?.facebookOgImageUrl || node.work.image?.recommendedImageUrl || null,
-    episodesCount: node.work.episodesCount,
-    watchersCount: node.work.watchersCount,
-    officialSiteUrl: node.work.officialSiteUrl || null,
-    state: node.status?.state ?? null,
-    nextEpisodeNumber: node.nextEpisode?.number ?? null,
-  }));
-
-  const works = orderBy ? sortWorks(mappedWorks, orderBy, order) : mappedWorks;
-
-  return c.json({ works, pageInfo });
+  return c.json(result);
 });
 
 export default app;

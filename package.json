@@ -23,19 +23,19 @@
     "dayjs": "1.11.21",
     "discord-interactions": "4.4.0",
     "hono": "4.12.25",
-    "openai": "6.42.0",
+    "openai": "6.44.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.16.15",
-    "@cloudflare/workers-types": "4.20260611.1",
+    "@cloudflare/workers-types": "4.20260617.1",
     "@types/node": "25.9.3",
-    "discord-api-types": "0.38.48",
-    "oxfmt": "0.54.0",
-    "oxlint": "1.69.0",
+    "discord-api-types": "0.38.49",
+    "oxfmt": "0.55.0",
+    "oxlint": "1.70.0",
     "oxlint-tsgolint": "0.23.0",
     "typescript": "6.0.3",
-    "vitest": "4.1.8",
+    "vitest": "4.1.9",
     "wrangler": "4.100.0"
   },
   "packageManager": "pnpm@11.7.0"

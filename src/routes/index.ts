@@ -10,6 +10,7 @@ import messagesRoute from "~/routes/discord/messages";
 import registerRoute from "~/routes/discord/register";
 import iframeRoute from "~/routes/lab/iframe";
 import postRoute from "~/routes/lab/post";
+import mcpRoute from "~/routes/mcp";
 import myTopTracksRoute from "~/routes/spotify/my-top-tracks";
 import searchRoute from "~/routes/spotify/search";
 
@@ -54,6 +55,8 @@ app.route("/annict/library", libraryRoute);
 // Lab routes
 app.route("/lab/post", postRoute);
 app.route("/lab/iframe", iframeRoute);
+// MCP route
+app.route("/mcp", mcpRoute);
 
 // OpenAPI仕様書のエンドポイント
 app.doc("/docs/openapi.json", {

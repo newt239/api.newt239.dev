@@ -22,20 +22,20 @@
     "@spotify/web-api-ts-sdk": "1.2.0",
     "dayjs": "1.11.21",
     "discord-interactions": "4.4.0",
-    "hono": "4.12.27",
+    "hono": "4.12.28",
     "openai": "6.45.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.16.15",
-    "@cloudflare/workers-types": "4.20260617.1",
-    "@types/node": "26.1.0",
+    "@cloudflare/workers-types": "5.20260708.1",
+    "@types/node": "26.1.1",
     "discord-api-types": "0.38.49",
-    "oxfmt": "0.57.0",
-    "oxlint": "1.72.0",
+    "oxfmt": "0.58.0",
+    "oxlint": "1.73.0",
     "oxlint-tsgolint": "0.24.0",
-    "typescript": "6.0.3",
-    "vitest": "4.1.9",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10",
     "wrangler": "4.100.0"
   },
   "packageManager": "pnpm@11.7.0"

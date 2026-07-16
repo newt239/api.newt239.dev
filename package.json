@@ -14,29 +14,29 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@hono/mcp": "0.3.0",
+    "@hono/mcp": "0.3.1",
     "@hono/swagger-ui": "0.6.1",
-    "@hono/zod-openapi": "1.4.0",
-    "@hono/zod-validator": "0.8.0",
+    "@hono/zod-openapi": "1.5.1",
+    "@hono/zod-validator": "0.9.0",
     "@modelcontextprotocol/sdk": "1.29.0",
     "@spotify/web-api-ts-sdk": "1.2.0",
     "dayjs": "1.11.21",
     "discord-interactions": "4.4.0",
-    "hono": "4.12.28",
-    "openai": "6.45.0",
+    "hono": "4.12.30",
+    "openai": "6.47.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "0.16.15",
+    "@cloudflare/vitest-pool-workers": "0.18.5",
     "@cloudflare/workers-types": "5.20260708.1",
     "@types/node": "26.1.1",
-    "discord-api-types": "0.38.49",
-    "oxfmt": "0.58.0",
-    "oxlint": "1.73.0",
+    "discord-api-types": "0.38.50",
+    "oxfmt": "0.59.0",
+    "oxlint": "1.74.0",
     "oxlint-tsgolint": "0.24.0",
     "typescript": "7.0.2",
     "vitest": "4.1.10",
-    "wrangler": "4.100.0"
+    "wrangler": "4.111.0"
   },
   "packageManager": "pnpm@11.7.0"
 }

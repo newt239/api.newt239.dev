@@ -8,6 +8,7 @@
     "dev": "wrangler dev --local",
     "format": "oxfmt --check",
     "format:fix": "oxfmt",
+    "knip": "knip",
     "lint": "oxlint --type-aware",
     "lint:fix": "oxlint --fix",
     "test": "vitest run",
@@ -17,7 +18,6 @@
     "@hono/mcp": "0.3.1",
     "@hono/swagger-ui": "0.6.1",
     "@hono/zod-openapi": "1.5.1",
-    "@hono/zod-validator": "0.9.0",
     "@modelcontextprotocol/sdk": "1.29.0",
     "@spotify/web-api-ts-sdk": "1.2.0",
     "dayjs": "1.11.21",
@@ -31,6 +31,7 @@
     "@cloudflare/workers-types": "5.20260708.1",
     "@types/node": "26.1.1",
     "discord-api-types": "0.38.50",
+    "knip": "6.27.0",
     "oxfmt": "0.59.0",
     "oxlint": "1.74.0",
     "oxlint-tsgolint": "0.24.0",
@@ -38,5 +39,5 @@
     "vitest": "4.1.10",
     "wrangler": "4.111.0"
   },
-  "packageManager": "pnpm@11.7.0"
+  "packageManager": "pnpm@11.15.1"
 }

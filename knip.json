@@ -1,0 +1,7 @@
+{
+  "$schema": "./node_modules/knip/schema.json",
+  "entry": ["src/**/*.spec.ts", "src/tests/**/*.ts"],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignoreDependencies": ["cloudflare"],
+  "vitest": false
+}

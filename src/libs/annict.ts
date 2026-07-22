@@ -65,11 +65,11 @@ export const getAnnictLibraryEntries = async (
   return res;
 };
 
-export type LibraryState = "watching" | "watched" | "wanna_watch" | "on_hold" | "stop_watching";
-export type LibraryOrderBy = "annictId" | "watchersCount" | "titleEn" | "season";
-export type LibraryOrder = "asc" | "desc";
+type LibraryState = "watching" | "watched" | "wanna_watch" | "on_hold" | "stop_watching";
+type LibraryOrderBy = "annictId" | "watchersCount" | "titleEn" | "season";
+type LibraryOrder = "asc" | "desc";
 
-export type LibraryWork = {
+type LibraryWork = {
   annictId: number;
   title: string;
   titleEn: string | null;

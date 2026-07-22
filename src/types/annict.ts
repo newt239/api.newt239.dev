@@ -1,4 +1,4 @@
-export type AnnictWork = {
+type AnnictWork = {
   annictId: number;
   title: string;
   titleEn: string | null;
@@ -13,7 +13,7 @@ export type AnnictWork = {
   officialSiteUrl: string | null;
 };
 
-export type AnnictLibraryEntryNode = {
+type AnnictLibraryEntryNode = {
   work: AnnictWork;
   status: { state: string } | null;
   nextEpisode: { number: number | null } | null;

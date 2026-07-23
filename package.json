@@ -22,7 +22,7 @@
     "@spotify/web-api-ts-sdk": "1.2.0",
     "dayjs": "1.11.21",
     "discord-interactions": "4.4.0",
-    "hono": "4.12.30",
+    "hono": "4.12.31",
     "openai": "6.47.0",
     "zod": "4.4.3"
   },
@@ -31,10 +31,10 @@
     "@cloudflare/workers-types": "5.20260708.1",
     "@types/node": "26.1.1",
     "discord-api-types": "0.38.50",
-    "knip": "6.27.0",
-    "oxfmt": "0.59.0",
-    "oxlint": "1.74.0",
-    "oxlint-tsgolint": "0.24.0",
+    "knip": "6.29.0",
+    "oxfmt": "0.60.0",
+    "oxlint": "1.75.0",
+    "oxlint-tsgolint": "7.0.2001",
     "typescript": "7.0.2",
     "vitest": "4.1.10",
     "wrangler": "4.111.0"

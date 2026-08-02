@@ -1,7 +1,13 @@
+export type ThemeVariableKind = "color" | "number" | "enum";
+
 export type ThemeVariable = {
   name: string;
   description: string;
   defaultValue: string;
+  kind?: ThemeVariableKind;
+  allowedValues?: string[];
+  min?: number;
+  max?: number;
 };
 
 export const defaultRequiredVariables: ThemeVariable[] = [
@@ -47,33 +53,63 @@ export const defaultRequiredVariables: ThemeVariable[] = [
   },
 ];
 
+function kindOf(variable: ThemeVariable): ThemeVariableKind {
+  return variable.kind ?? "color";
+}
+
+function formatType(variable: ThemeVariable): string {
+  const kind = kindOf(variable);
+  if (kind === "number") {
+    return `number (${variable.min ?? 0}–${variable.max ?? 1})`;
+  }
+  return kind;
+}
+
+function formatAllowed(variable: ThemeVariable): string {
+  if (kindOf(variable) !== "enum") {
+    return "-";
+  }
+  return (variable.allowedValues ?? []).map((value) => `\`${value}\``).join(" / ");
+}
+
 export function buildSystemPrompt(variables: ThemeVariable[]): string {
   return `
 # Instruction
 
-You are a bold, creative designer generating a color theme for a personal portfolio website.
-The user gives you a keyword or mood. You MUST produce a dramatically different palette that strongly reflects that theme.
+You are a bold, creative designer generating a visual theme for a personal portfolio website.
+The user gives you a keyword or mood. You MUST produce a dramatically different theme that strongly reflects it.
+The theme covers not only colors but also shape, typography and motion.
 
 ## Priority (most important first)
 1. **Background color**: Identify which variable is the background from each variable's Description in the Variables table below. That color is the most visible element — change it boldly to match the theme (e.g. deep navy for "ocean", pitch black for "night").
 2. **Text color**: Identify which variable is the text/foreground from each variable's Description. It must contrast with the background. Ensure a contrast ratio of at least 3:1, preferably 4.5:1, between the background variable and the text variable.
 3. **Accent / highlight colors**: Use vivid, saturated colors that embody the theme.
-4. All other variables should harmonize with the above.
+4. **Shape, typography and motion**: Pick the corner rounding, border width, corner shape, font and transition that match the mood.
+5. All other variables should harmonize with the above.
+
+## Value format
+Each variable has a Type in the Variables table. Follow the rule for that type.
+
+- **color**: three space-separated integers (R G B), each 0–255. Example: "30 60 120". Do NOT return hex codes or CSS functions.
+- **number**: a bare decimal number within the range shown in the Type column. No units. Example: "0.5"
+- **enum**: exactly one of the values listed in the Allowed column, copied verbatim. Do NOT invent new values.
 
 ## Rules
-- Each value MUST be three space-separated integers (R G B), each 0–255. Example: "30 60 120"
-- Do NOT return hex codes, CSS functions, or anything other than "R G B" format.
-- Be aggressive with color choices. The user expects a dramatic visual transformation.
+- Be aggressive with your choices. The user expects a dramatic visual transformation.
 - Dark backgrounds, neon accents, deep saturated tones — all are encouraged when they fit the theme.
-- Avoid producing colors that are close to the defaults. Every variable should clearly change.
+- Avoid producing values that are close to the defaults. Every variable should clearly change.
 - **Contrast**: Determine which variable is background and which is text from the Description column in the Variables table. Those two colors MUST have a contrast ratio of at least 3:1 (prefer 4.5:1). Dark background → light text; light background → dark text.
+- **Coherence**: shape, typography and motion must agree with the mood. Sharp / futuristic / brutal themes want little or no corner rounding, angular corner shapes, thick borders and fast linear motion. Soft / cute / dreamy themes want generous rounding, rounded corners, thin borders and slow bouncy motion.
 
 # Variables
 
-| Name | Description | Default Value |
-| ---- | ----------- | ------------- |
+| Name | Description | Type | Allowed | Default Value |
+| ---- | ----------- | ---- | ------- | ------------- |
 ${variables
-  .map(({ name, description, defaultValue }) => `| ${name} | ${description} | ${defaultValue} |`)
+  .map(
+    (variable) =>
+      `| ${variable.name} | ${variable.description} | ${formatType(variable)} | ${formatAllowed(variable)} | ${variable.defaultValue} |`,
+  )
   .join("\n")}
 `;
 }
@@ -86,7 +122,12 @@ export function buildResponseFormat(variables: ThemeVariable[]) {
       schema: {
         type: "object",
         properties: Object.fromEntries(
-          variables.map((variable) => [variable.name, { type: "string" }]),
+          variables.map((variable) => [
+            variable.name,
+            kindOf(variable) === "enum" && variable.allowedValues?.length
+              ? { type: "string", enum: variable.allowedValues }
+              : { type: "string" },
+          ]),
         ),
         required: variables.map((variable) => variable.name),
         additionalProperties: false,
@@ -94,4 +135,46 @@ export function buildResponseFormat(variables: ThemeVariable[]) {
       strict: true,
     },
   } as const;
+}
+
+const RGB_PATTERN = /^\d{1,3} \d{1,3} \d{1,3}$/;
+
+function isValidValue(variable: ThemeVariable, value: unknown): value is string {
+  if (typeof value !== "string") {
+    return false;
+  }
+  switch (kindOf(variable)) {
+    case "color": {
+      if (!RGB_PATTERN.test(value)) {
+        return false;
+      }
+      return value.split(" ").every((channel) => Number(channel) <= 255);
+    }
+    case "number": {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed)) {
+        return false;
+      }
+      return (
+        parsed >= (variable.min ?? Number.NEGATIVE_INFINITY) &&
+        parsed <= (variable.max ?? Number.POSITIVE_INFINITY)
+      );
+    }
+    case "enum": {
+      return (variable.allowedValues ?? []).includes(value);
+    }
+  }
+}
+
+export function validateThemeValues(
+  variables: ThemeVariable[],
+  generated: Record<string, unknown>,
+): { name: string; value: string }[] {
+  return variables.map((variable) => {
+    const value = generated[variable.name];
+    return {
+      name: variable.name,
+      value: isValidValue(variable, value) ? value : variable.defaultValue,
+    };
+  });
 }

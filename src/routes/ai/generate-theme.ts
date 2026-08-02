@@ -3,7 +3,12 @@ import dayjs from "dayjs";
 import { env } from "hono/adapter";
 import OpenAI, { type APIError } from "openai";
 
-import { buildResponseFormat, buildSystemPrompt, defaultRequiredVariables } from "~/libs/constants";
+import {
+  buildResponseFormat,
+  buildSystemPrompt,
+  defaultRequiredVariables,
+  validateThemeValues,
+} from "~/libs/constants";
 
 import type { Bindings } from "~/types/bindings";
 
@@ -18,7 +23,26 @@ const themeVariableSchema = z.object({
   }),
   defaultValue: z.string().openapi({
     example: "74 74 74",
-    description: "デフォルト値",
+    description: "デフォルト値。生成された値が不正だった場合はこの値が使われる",
+  }),
+  kind: z.enum(["color", "number", "enum"]).optional().openapi({
+    example: "enum",
+    description: "値の種類。省略した場合は color として扱われる",
+  }),
+  allowedValues: z
+    .array(z.string())
+    .optional()
+    .openapi({
+      example: ["round", "bevel"],
+      description: "kind が enum の場合に選択させる候補",
+    }),
+  min: z.number().optional().openapi({
+    example: 0,
+    description: "kind が number の場合の下限",
+  }),
+  max: z.number().optional().openapi({
+    example: 2,
+    description: "kind が number の場合の上限",
   }),
 });
 
@@ -168,10 +192,7 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
       {
         type: "success",
         message: "Successfully generated theme.",
-        variables: Object.entries(parsedContent).map(([name, value]) => ({
-          name,
-          value,
-        })),
+        variables: validateThemeValues(variables, parsedContent),
       },
       200,
     );

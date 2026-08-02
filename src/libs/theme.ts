@@ -1,10 +1,8 @@
-export type ThemeVariableKind = "color" | "number" | "enum";
-
 export type ThemeVariable = {
   name: string;
   description: string;
   defaultValue: string;
-  kind?: ThemeVariableKind;
+  kind?: "color" | "number" | "enum";
   allowedValues?: string[];
   min?: number;
   max?: number;

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { buildResponseFormat, buildSystemPrompt, validateThemeValues } from "./constants";
+import { buildResponseFormat, buildSystemPrompt, validateThemeValues } from "./theme";
 
-import type { ThemeVariable } from "./constants";
+import type { ThemeVariable } from "./theme";
 
 const colorVariable: ThemeVariable = {
   name: "--bg",

@@ -8,7 +8,7 @@ import {
   buildSystemPrompt,
   defaultRequiredVariables,
   validateThemeValues,
-} from "~/libs/constants";
+} from "~/libs/theme";
 
 import type { Bindings } from "~/types/bindings";
 

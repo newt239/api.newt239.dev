@@ -12,6 +12,12 @@ export type ThemeVariable = {
   minContrast?: number;
 };
 
+type Rgb = [number, number, number];
+
+const RGB_PATTERN = /^\d{1,3} \d{1,3} \d{1,3}$/;
+const WHITE: Rgb = [255, 255, 255];
+const BLACK: Rgb = [0, 0, 0];
+
 export const defaultRequiredVariables: ThemeVariable[] = [
   {
     name: "--color-text",
@@ -55,27 +61,27 @@ export const defaultRequiredVariables: ThemeVariable[] = [
   },
 ];
 
-function kindOf(variable: ThemeVariable): ThemeVariableKind {
-  return variable.kind ?? "color";
-}
-
-function formatType(variable: ThemeVariable): string {
-  const kind = kindOf(variable);
-  if (kind === "number") {
-    return `number (${variable.min ?? 0}–${variable.max ?? 1})`;
+const parseRgb = (value: string): Rgb | null => {
+  if (!RGB_PATTERN.test(value)) {
+    return null;
   }
-  return kind;
-}
+  const [red, green, blue] = value.split(" ").map(Number);
+  return red > 255 || green > 255 || blue > 255 ? null : [red, green, blue];
+};
 
-function formatAllowed(variable: ThemeVariable): string {
-  if (kindOf(variable) !== "enum") {
-    return "-";
-  }
-  return (variable.allowedValues ?? []).map((value) => `\`${value}\``).join(" / ");
-}
+const contrastRatio = (a: Rgb, b: Rgb): number => {
+  const luminance = (rgb: Rgb) => {
+    const [red, green, blue] = rgb.map((channel) => {
+      const ratio = channel / 255;
+      return ratio <= 0.03928 ? ratio / 12.92 : ((ratio + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+  };
+  const [lighter, darker] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (lighter + 0.05) / (darker + 0.05);
+};
 
-export function buildSystemPrompt(variables: ThemeVariable[]): string {
-  return `
+export const buildSystemPrompt = (variables: ThemeVariable[]): string => `
 # Instruction
 
 You are a bold, creative designer generating a visual theme for a personal portfolio website.
@@ -108,16 +114,20 @@ Each variable has a Type in the Variables table. Follow the rule for that type.
 | Name | Description | Type | Allowed | Default Value |
 | ---- | ----------- | ---- | ------- | ------------- |
 ${variables
-  .map(
-    (variable) =>
-      `| ${variable.name} | ${variable.description} | ${formatType(variable)} | ${formatAllowed(variable)} | ${variable.defaultValue} |`,
-  )
+  .map((variable) => {
+    const kind = variable.kind ?? "color";
+    const type = kind === "number" ? `number (${variable.min ?? 0}–${variable.max ?? 1})` : kind;
+    const allowed =
+      kind === "enum"
+        ? (variable.allowedValues ?? []).map((value) => `\`${value}\``).join(" / ")
+        : "-";
+    return `| ${variable.name} | ${variable.description} | ${type} | ${allowed} | ${variable.defaultValue} |`;
+  })
   .join("\n")}
 `;
-}
 
-export function buildResponseFormat(variables: ThemeVariable[]) {
-  return {
+export const buildResponseFormat = (variables: ThemeVariable[]) =>
+  ({
     type: "json_schema",
     json_schema: {
       name: "css_variables",
@@ -126,7 +136,7 @@ export function buildResponseFormat(variables: ThemeVariable[]) {
         properties: Object.fromEntries(
           variables.map((variable) => [
             variable.name,
-            kindOf(variable) === "enum" && variable.allowedValues?.length
+            variable.kind === "enum" && variable.allowedValues?.length
               ? { type: "string", enum: variable.allowedValues }
               : { type: "string" },
           ]),
@@ -136,103 +146,43 @@ export function buildResponseFormat(variables: ThemeVariable[]) {
       },
       strict: true,
     },
-  } as const;
-}
+  }) as const;
 
-const RGB_PATTERN = /^\d{1,3} \d{1,3} \d{1,3}$/;
-
-function isValidValue(variable: ThemeVariable, value: unknown): value is string {
-  if (typeof value !== "string") {
-    return false;
-  }
-  switch (kindOf(variable)) {
-    case "color": {
-      if (!RGB_PATTERN.test(value)) {
-        return false;
-      }
-      return value.split(" ").every((channel) => Number(channel) <= 255);
-    }
-    case "number": {
-      const parsed = Number(value);
-      if (!Number.isFinite(parsed)) {
-        return false;
-      }
-      return (
-        parsed >= (variable.min ?? Number.NEGATIVE_INFINITY) &&
-        parsed <= (variable.max ?? Number.POSITIVE_INFINITY)
-      );
-    }
-    case "enum": {
-      return (variable.allowedValues ?? []).includes(value);
-    }
-  }
-}
-
-type Rgb = [number, number, number];
-
-const WHITE: Rgb = [255, 255, 255];
-const BLACK: Rgb = [0, 0, 0];
-
-function parseRgb(value: string): Rgb | null {
-  if (!RGB_PATTERN.test(value)) {
-    return null;
-  }
-  const channels = value.split(" ").map(Number);
-  if (channels.some((channel) => channel > 255)) {
-    return null;
-  }
-  return [channels[0], channels[1], channels[2]];
-}
-
-function relativeLuminance([red, green, blue]: Rgb): number {
-  const [r, g, b] = [red, green, blue].map((channel) => {
-    const ratio = channel / 255;
-    return ratio <= 0.03928 ? ratio / 12.92 : ((ratio + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function contrastRatio(a: Rgb, b: Rgb): number {
-  const [lighter, darker] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x);
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
-function mix(from: Rgb, to: Rgb, amount: number): Rgb {
-  return [
-    Math.round(from[0] + (to[0] - from[0]) * amount),
-    Math.round(from[1] + (to[1] - from[1]) * amount),
-    Math.round(from[2] + (to[2] - from[2]) * amount),
-  ];
-}
-
-function adjustForContrast(foreground: Rgb, background: Rgb, minContrast: number): Rgb {
-  if (contrastRatio(foreground, background) >= minContrast) {
-    return foreground;
-  }
-  const target =
-    contrastRatio(WHITE, background) >= contrastRatio(BLACK, background) ? WHITE : BLACK;
-  let low = 0;
-  let high = 1;
-  for (let step = 0; step < 16; step++) {
-    const middle = (low + high) / 2;
-    if (contrastRatio(mix(foreground, target, middle), background) >= minContrast) {
-      high = middle;
-    } else {
-      low = middle;
-    }
-  }
-  const adjusted = mix(foreground, target, high);
-  return contrastRatio(adjusted, background) >= minContrast ? adjusted : target;
-}
-
-export function validateThemeValues(
+export const validateThemeValues = (
   variables: ThemeVariable[],
   generated: Record<string, unknown>,
-): { name: string; value: string }[] {
+): { name: string; value: string }[] => {
   const resolved = new Map<string, string>();
+
   for (const variable of variables) {
+    resolved.set(variable.name, variable.defaultValue);
     const value = generated[variable.name];
-    resolved.set(variable.name, isValidValue(variable, value) ? value : variable.defaultValue);
+    if (typeof value !== "string") {
+      continue;
+    }
+    switch (variable.kind ?? "color") {
+      case "color":
+        if (parseRgb(value)) {
+          resolved.set(variable.name, value);
+        }
+        break;
+      case "number": {
+        const parsed = Number(value);
+        if (
+          Number.isFinite(parsed) &&
+          parsed >= (variable.min ?? Number.NEGATIVE_INFINITY) &&
+          parsed <= (variable.max ?? Number.POSITIVE_INFINITY)
+        ) {
+          resolved.set(variable.name, value);
+        }
+        break;
+      }
+      case "enum":
+        if ((variable.allowedValues ?? []).includes(value)) {
+          resolved.set(variable.name, value);
+        }
+        break;
+    }
   }
 
   for (const variable of variables) {
@@ -241,17 +191,37 @@ export function validateThemeValues(
     }
     const foreground = parseRgb(resolved.get(variable.name) ?? "");
     const background = parseRgb(resolved.get(variable.contrastAgainst) ?? "");
-    if (!foreground || !background) {
+    if (
+      !foreground ||
+      !background ||
+      contrastRatio(foreground, background) >= variable.minContrast
+    ) {
       continue;
     }
-    resolved.set(
-      variable.name,
-      adjustForContrast(foreground, background, variable.minContrast).join(" "),
-    );
+    const target =
+      contrastRatio(WHITE, background) >= contrastRatio(BLACK, background) ? WHITE : BLACK;
+    let low = 0;
+    let high = 1;
+    let adjusted = target;
+    for (let step = 0; step < 16; step++) {
+      const middle = (low + high) / 2;
+      const candidate: Rgb = [
+        Math.round(foreground[0] + (target[0] - foreground[0]) * middle),
+        Math.round(foreground[1] + (target[1] - foreground[1]) * middle),
+        Math.round(foreground[2] + (target[2] - foreground[2]) * middle),
+      ];
+      if (contrastRatio(candidate, background) >= variable.minContrast) {
+        high = middle;
+        adjusted = candidate;
+      } else {
+        low = middle;
+      }
+    }
+    resolved.set(variable.name, adjusted.join(" "));
   }
 
   return variables.map((variable) => ({
     name: variable.name,
     value: resolved.get(variable.name) ?? variable.defaultValue,
   }));
-}
+};

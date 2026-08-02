@@ -8,6 +8,8 @@ export type ThemeVariable = {
   allowedValues?: string[];
   min?: number;
   max?: number;
+  contrastAgainst?: string;
+  minContrast?: number;
 };
 
 export const defaultRequiredVariables: ThemeVariable[] = [
@@ -98,7 +100,7 @@ Each variable has a Type in the Variables table. Follow the rule for that type.
 - Be aggressive with your choices. The user expects a dramatic visual transformation.
 - Dark backgrounds, neon accents, deep saturated tones — all are encouraged when they fit the theme.
 - Avoid producing values that are close to the defaults. Every variable should clearly change.
-- **Contrast**: Determine which variable is background and which is text from the Description column in the Variables table. Those two colors MUST have a contrast ratio of at least 3:1 (prefer 4.5:1). Dark background → light text; light background → dark text.
+- **Contrast**: Determine which variable is background and which is text from the Description column in the Variables table. Those two colors MUST have a contrast ratio of at least 3:1 (prefer 4.5:1). Dark background → light text; light background → dark text. Even when the theme itself is monochrome (ink, charcoal, snow), the text and the background must never be the same shade — pick opposite ends of that monochrome range.
 - **Coherence**: shape, typography and motion must agree with the mood. Sharp / futuristic / brutal themes want little or no corner rounding, angular corner shapes, thick borders and fast linear motion. Soft / cute / dreamy themes want generous rounding, rounded corners, thin borders and slow bouncy motion.
 
 # Variables
@@ -166,15 +168,90 @@ function isValidValue(variable: ThemeVariable, value: unknown): value is string 
   }
 }
 
+type Rgb = [number, number, number];
+
+const WHITE: Rgb = [255, 255, 255];
+const BLACK: Rgb = [0, 0, 0];
+
+function parseRgb(value: string): Rgb | null {
+  if (!RGB_PATTERN.test(value)) {
+    return null;
+  }
+  const channels = value.split(" ").map(Number);
+  if (channels.some((channel) => channel > 255)) {
+    return null;
+  }
+  return [channels[0], channels[1], channels[2]];
+}
+
+function relativeLuminance([red, green, blue]: Rgb): number {
+  const [r, g, b] = [red, green, blue].map((channel) => {
+    const ratio = channel / 255;
+    return ratio <= 0.03928 ? ratio / 12.92 : ((ratio + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrastRatio(a: Rgb, b: Rgb): number {
+  const [lighter, darker] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function mix(from: Rgb, to: Rgb, amount: number): Rgb {
+  return [
+    Math.round(from[0] + (to[0] - from[0]) * amount),
+    Math.round(from[1] + (to[1] - from[1]) * amount),
+    Math.round(from[2] + (to[2] - from[2]) * amount),
+  ];
+}
+
+function adjustForContrast(foreground: Rgb, background: Rgb, minContrast: number): Rgb {
+  if (contrastRatio(foreground, background) >= minContrast) {
+    return foreground;
+  }
+  const target =
+    contrastRatio(WHITE, background) >= contrastRatio(BLACK, background) ? WHITE : BLACK;
+  let low = 0;
+  let high = 1;
+  for (let step = 0; step < 16; step++) {
+    const middle = (low + high) / 2;
+    if (contrastRatio(mix(foreground, target, middle), background) >= minContrast) {
+      high = middle;
+    } else {
+      low = middle;
+    }
+  }
+  const adjusted = mix(foreground, target, high);
+  return contrastRatio(adjusted, background) >= minContrast ? adjusted : target;
+}
+
 export function validateThemeValues(
   variables: ThemeVariable[],
   generated: Record<string, unknown>,
 ): { name: string; value: string }[] {
-  return variables.map((variable) => {
+  const resolved = new Map<string, string>();
+  for (const variable of variables) {
     const value = generated[variable.name];
-    return {
-      name: variable.name,
-      value: isValidValue(variable, value) ? value : variable.defaultValue,
-    };
-  });
+    resolved.set(variable.name, isValidValue(variable, value) ? value : variable.defaultValue);
+  }
+
+  for (const variable of variables) {
+    if (!variable.contrastAgainst || !variable.minContrast) {
+      continue;
+    }
+    const foreground = parseRgb(resolved.get(variable.name) ?? "");
+    const background = parseRgb(resolved.get(variable.contrastAgainst) ?? "");
+    if (!foreground || !background) {
+      continue;
+    }
+    resolved.set(
+      variable.name,
+      adjustForContrast(foreground, background, variable.minContrast).join(" "),
+    );
+  }
+
+  return variables.map((variable) => ({
+    name: variable.name,
+    value: resolved.get(variable.name) ?? variable.defaultValue,
+  }));
 }

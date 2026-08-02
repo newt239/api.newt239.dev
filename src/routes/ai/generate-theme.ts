@@ -44,6 +44,14 @@ const themeVariableSchema = z.object({
     example: 2,
     description: "kind が number の場合の上限",
   }),
+  contrastAgainst: z.string().optional().openapi({
+    example: "--bg",
+    description: "この変数が読めるだけの明度差を保つべき相手の変数名",
+  }),
+  minContrast: z.number().optional().openapi({
+    example: 4.5,
+    description: "contrastAgainst との間で最低限確保するWCAGコントラスト比",
+  }),
 });
 
 const generateThemeSchema = z.object({
@@ -146,7 +154,7 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1-nano",
+      model: "gpt-5.6-luna",
       messages: [
         {
           role: "system",

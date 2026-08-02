@@ -120,3 +120,76 @@ describe("validateThemeValues", () => {
     ]);
   });
 });
+
+const luminance = (value: string) => {
+  const [r, g, b] = value.split(" ").map((channel) => {
+    const ratio = Number(channel) / 255;
+    return ratio <= 0.03928 ? ratio / 12.92 : ((ratio + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const ratioOf = (a: string, b: string) => {
+  const [lighter, darker] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (lighter + 0.05) / (darker + 0.05);
+};
+
+const backgroundVariable: ThemeVariable = {
+  name: "--bg",
+  description: "Page background color",
+  defaultValue: "255 248 240",
+};
+
+const textVariable: ThemeVariable = {
+  name: "--text",
+  description: "Main text color",
+  defaultValue: "48 42 37",
+  contrastAgainst: "--bg",
+  minContrast: 4.5,
+};
+
+const contrastVariables = [backgroundVariable, textVariable];
+
+describe("validateThemeValues のコントラスト補正", () => {
+  it("背景と文字色が同じでも読める明度まで引き離される", () => {
+    const result = validateThemeValues(contrastVariables, { "--bg": "0 0 0", "--text": "0 0 0" });
+    const text = result.find((v) => v.name === "--text")!.value;
+    expect(result.find((v) => v.name === "--bg")!.value).toBe("0 0 0");
+    expect(ratioOf(text, "0 0 0")).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("明るい背景では文字色が暗い方向へ補正される", () => {
+    const result = validateThemeValues(contrastVariables, {
+      "--bg": "255 255 255",
+      "--text": "250 250 250",
+    });
+    const text = result.find((v) => v.name === "--text")!.value;
+    expect(ratioOf(text, "255 255 255")).toBeGreaterThanOrEqual(4.5);
+    expect(luminance(text)).toBeLessThan(luminance("250 250 250"));
+  });
+
+  it("すでに条件を満たしている色は変更されない", () => {
+    const result = validateThemeValues(contrastVariables, {
+      "--bg": "255 255 255",
+      "--text": "20 20 20",
+    });
+    expect(result.find((v) => v.name === "--text")!.value).toBe("20 20 20");
+  });
+
+  it("補正後も色味の方向は保たれる", () => {
+    const result = validateThemeValues(contrastVariables, {
+      "--bg": "10 10 10",
+      "--text": "0 0 60",
+    });
+    const [r, g, b] = result
+      .find((v) => v.name === "--text")!
+      .value.split(" ")
+      .map(Number);
+    expect(b).toBeGreaterThan(r);
+    expect(b).toBeGreaterThan(g);
+  });
+
+  it("contrastAgainstを持たない変数は補正されない", () => {
+    const result = validateThemeValues([backgroundVariable], { "--bg": "0 0 0" });
+    expect(result).toEqual([{ name: "--bg", value: "0 0 0" }]);
+  });
+});

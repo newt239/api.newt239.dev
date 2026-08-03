@@ -11,6 +11,7 @@ import {
   repairConstraints,
   validateThemeValues,
 } from "~/libs/theme";
+import { renderThemePreview } from "~/libs/theme-preview";
 
 import type { Bindings } from "~/types/bindings";
 
@@ -150,6 +151,8 @@ const route = createRoute({
 });
 
 const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) => {
+  c.header("Accept-CH", "Sec-CH-Viewport-Width, Sec-CH-Viewport-Height, Sec-CH-DPR");
+
   const { results } = await c.env.DB.prepare(
     "SELECT COUNT(*) AS count FROM themes WHERE created_at > datetime('now', '-1 day')",
   ).all();
@@ -173,6 +176,18 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
   const openai = new OpenAI({
     apiKey: OPENAI_API_KEY,
   });
+
+  const viewportWidth = c.req.header("sec-ch-viewport-width") ?? c.req.header("viewport-width");
+  const viewportHeight = c.req.header("sec-ch-viewport-height");
+  const pixelRatio = c.req.header("sec-ch-dpr") ?? c.req.header("dpr");
+  const client = [
+    c.req.header("user-agent"),
+    viewportWidth &&
+      `${viewportWidth}${viewportHeight ? `x${viewportHeight}` : ""}${pixelRatio ? ` @${pixelRatio}x` : ""}`,
+    c.req.header("sec-ch-ua-platform")?.replaceAll('"', ""),
+  ]
+    .filter(Boolean)
+    .join(" / ");
 
   try {
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
@@ -217,18 +232,28 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
       .run();
     const parsedContent = repaired;
     // ディスコードに通知
-    await fetch(DISCORD_WEBHOOK, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const preview = await renderThemePreview(variables, parsedContent, rules).catch((error) => {
+      console.error(error);
+      return null;
+    });
+    const nonColorValues = Object.fromEntries(
+      variables
+        .filter((variable) => variable.kind === "number" || variable.kind === "enum")
+        .map((variable) => [variable.name, parsedContent[variable.name]]),
+    );
+    const notification = new FormData();
+    notification.append(
+      "payload_json",
+      JSON.stringify({
         username: "portfolio",
         avatar_url: "https://newt239.dev/logo.png",
+        attachments: preview ? [{ id: 0, filename: "theme.png" }] : undefined,
         embeds: [
           {
             title: "New Theme Generated",
-            description: `Prompt: \`\`${prompt}\`\`\n\nAttempts: ${attempts}/${MAX_ATTEMPTS}${violations.length === 0 ? "" : `\nRepaired after unmet rules:\n${violations.map((violation) => `- ${violation}`).join("\n")}`}\n\nResponse:\n\`\`\`json\n${JSON.stringify(parsedContent, null, "\t")}\n\`\`\``,
+            description: `Prompt: \`\`${prompt}\`\`\n\nAttempts: ${attempts}/${MAX_ATTEMPTS}${violations.length === 0 ? "" : `\nRepaired after unmet rules:\n${violations.map((violation) => `- ${violation}`).join("\n")}`}${Object.keys(nonColorValues).length === 0 ? "" : `\n\nResponse:\n\`\`\`json\n${JSON.stringify(nonColorValues, null, "\t")}\n\`\`\``}`,
+            image: preview ? { url: "attachment://theme.png" } : undefined,
+            fields: client ? [{ name: "Client", value: client }] : undefined,
             timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
             color: 2664261,
             footer: {
@@ -238,7 +263,11 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
           },
         ],
       }),
-    });
+    );
+    if (preview) {
+      notification.append("files[0]", new Blob([preview], { type: "image/png" }), "theme.png");
+    }
+    await fetch(DISCORD_WEBHOOK, { method: "POST", body: notification });
     return c.json(
       {
         type: "success",
@@ -265,6 +294,7 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
           {
             title: (error as APIError).code || "Unknown Error",
             description: (error as APIError).message,
+            fields: client ? [{ name: "Client", value: client }] : undefined,
             timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
             color: 16711680,
             footer: {

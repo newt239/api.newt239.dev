@@ -28,6 +28,7 @@ describe("getSpotifyAccessToken", () => {
     };
 
     mockFetch.mockResolvedValueOnce({
+      ok: true,
       json: vi.fn().mockResolvedValue(mockResponse),
     });
 
@@ -47,54 +48,56 @@ describe("getSpotifyAccessToken", () => {
     });
   });
 
-  it("APIからエラーレスポンスが返された場合nullishな値を返す", async () => {
-    const mockErrorResponse = {
-      error: "invalid_grant",
-      error_description: "Invalid refresh token",
-    };
-
+  it("リフレッシュトークンが失効している場合はエラーを投げる", async () => {
     mockFetch.mockResolvedValueOnce({
-      json: vi.fn().mockResolvedValue(mockErrorResponse),
+      ok: false,
+      status: 400,
+      text: vi
+        .fn()
+        .mockResolvedValue(
+          JSON.stringify({ error: "invalid_grant", error_description: "Refresh token revoked" }),
+        ),
     });
 
-    const result = await getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken);
-
-    expect(result).toBeFalsy();
+    await expect(
+      getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken),
+    ).rejects.toThrow("Spotify のアクセストークン取得に失敗しました (400)");
   });
 
-  it("ネットワークエラーが発生した場合nullを返す", async () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  it("レスポンスに access_token が含まれない場合はエラーを投げる", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ token_type: "Bearer" }),
+    });
 
+    await expect(
+      getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken),
+    ).rejects.toThrow("Spotify のトークンレスポンスに access_token が含まれていません");
+  });
+
+  it("ネットワークエラーはそのまま伝播する", async () => {
     mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
-    const result = await getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken);
-
-    expect(result).toBeNull();
-    expect(consoleErrorSpy).toHaveBeenCalledWith(new Error("Network error"));
-
-    consoleErrorSpy.mockRestore();
+    await expect(
+      getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken),
+    ).rejects.toThrow("Network error");
   });
 
-  it("JSONパースエラーが発生した場合nullを返す", async () => {
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
+  it("JSONパースエラーはそのまま伝播する", async () => {
     mockFetch.mockResolvedValueOnce({
+      ok: true,
       json: vi.fn().mockRejectedValue(new Error("JSON parse error")),
     });
 
-    const result = await getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken);
-
-    expect(result).toBeNull();
-    expect(consoleErrorSpy).toHaveBeenCalledWith(new Error("JSON parse error"));
-
-    consoleErrorSpy.mockRestore();
+    await expect(
+      getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken),
+    ).rejects.toThrow("JSON parse error");
   });
 
   it("正しいBasic認証ヘッダーを生成する", async () => {
-    const mockResponse = { access_token: "test_token" };
-
     mockFetch.mockResolvedValueOnce({
-      json: vi.fn().mockResolvedValue(mockResponse),
+      ok: true,
+      json: vi.fn().mockResolvedValue({ access_token: "test_token" }),
     });
 
     await getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken);
@@ -111,10 +114,9 @@ describe("getSpotifyAccessToken", () => {
   });
 
   it("正しいリクエストボディを送信する", async () => {
-    const mockResponse = { access_token: "test_token" };
-
     mockFetch.mockResolvedValueOnce({
-      json: vi.fn().mockResolvedValue(mockResponse),
+      ok: true,
+      json: vi.fn().mockResolvedValue({ access_token: "test_token" }),
     });
 
     await getSpotifyAccessToken(mockClientId, mockClientSecret, mockRefreshToken);

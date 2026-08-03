@@ -61,7 +61,7 @@ export const defaultRequiredVariables: ThemeVariable[] = [
   },
 ];
 
-const parseRgb = (value: string): Rgb | null => {
+export const parseRgb = (value: string): Rgb | null => {
   if (!RGB_PATTERN.test(value)) {
     return null;
   }

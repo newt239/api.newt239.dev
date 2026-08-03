@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { buildResponseFormat, buildSystemPrompt, validateThemeValues } from "./theme";
+import {
+  buildResponseFormat,
+  buildSystemPrompt,
+  checkConstraints,
+  repairConstraints,
+  validateThemeValues,
+} from "./theme";
 
-import type { ThemeVariable } from "./theme";
+import type { ThemeConstraint, ThemeVariable } from "./theme";
 
 const colorVariable: ThemeVariable = {
   name: "--bg",
@@ -74,50 +80,51 @@ describe("buildResponseFormat", () => {
 
 describe("validateThemeValues", () => {
   it("妥当な値はそのまま返される", () => {
-    const result = validateThemeValues(variables, {
-      "--bg": "10 20 30",
-      "--radius-scale": "0.5",
-      "--corner-shape": "bevel",
-    });
-    expect(result).toEqual([
-      { name: "--bg", value: "10 20 30" },
-      { name: "--radius-scale", value: "0.5" },
-      { name: "--corner-shape", value: "bevel" },
-    ]);
+    expect(
+      validateThemeValues(variables, {
+        "--bg": "10 20 30",
+        "--radius-scale": "0.5",
+        "--corner-shape": "bevel",
+      }),
+    ).toEqual({ "--bg": "10 20 30", "--radius-scale": "0.5", "--corner-shape": "bevel" });
   });
 
   it("RGBの形式でない色はデフォルト値に落とされる", () => {
-    const result = validateThemeValues([colorVariable], { "--bg": "#ff0000" });
-    expect(result).toEqual([{ name: "--bg", value: "255 248 240" }]);
+    expect(validateThemeValues([colorVariable], { "--bg": "#ff0000" })).toEqual({
+      "--bg": "255 248 240",
+    });
   });
 
   it("255を超えるRGBはデフォルト値に落とされる", () => {
-    const result = validateThemeValues([colorVariable], { "--bg": "300 20 30" });
-    expect(result).toEqual([{ name: "--bg", value: "255 248 240" }]);
+    expect(validateThemeValues([colorVariable], { "--bg": "300 20 30" })).toEqual({
+      "--bg": "255 248 240",
+    });
   });
 
   it("範囲外の数値はデフォルト値に落とされる", () => {
-    const result = validateThemeValues([numberVariable], { "--radius-scale": "5" });
-    expect(result).toEqual([{ name: "--radius-scale", value: "1" }]);
+    expect(validateThemeValues([numberVariable], { "--radius-scale": "5" })).toEqual({
+      "--radius-scale": "1",
+    });
   });
 
   it("数値でない値はデフォルト値に落とされる", () => {
-    const result = validateThemeValues([numberVariable], { "--radius-scale": "1rem" });
-    expect(result).toEqual([{ name: "--radius-scale", value: "1" }]);
+    expect(validateThemeValues([numberVariable], { "--radius-scale": "1rem" })).toEqual({
+      "--radius-scale": "1",
+    });
   });
 
   it("候補にない値はデフォルト値に落とされる", () => {
-    const result = validateThemeValues([enumVariable], { "--corner-shape": "squircle" });
-    expect(result).toEqual([{ name: "--corner-shape", value: "round" }]);
+    expect(validateThemeValues([enumVariable], { "--corner-shape": "squircle" })).toEqual({
+      "--corner-shape": "round",
+    });
   });
 
   it("値が欠けている場合もデフォルト値で補われる", () => {
-    const result = validateThemeValues(variables, {});
-    expect(result).toEqual([
-      { name: "--bg", value: "255 248 240" },
-      { name: "--radius-scale", value: "1" },
-      { name: "--corner-shape", value: "round" },
-    ]);
+    expect(validateThemeValues(variables, {})).toEqual({
+      "--bg": "255 248 240",
+      "--radius-scale": "1",
+      "--corner-shape": "round",
+    });
   });
 });
 
@@ -133,63 +140,82 @@ const ratioOf = (a: string, b: string) => {
   return (lighter + 0.05) / (darker + 0.05);
 };
 
-const backgroundVariable: ThemeVariable = {
-  name: "--bg",
-  description: "Page background color",
-  defaultValue: "255 248 240",
+const textOnSurface: ThemeConstraint = {
+  type: "contrast",
+  foreground: "--text",
+  background: "--surface",
+  min: 4.5,
+};
+const surfaceNearBg: ThemeConstraint = {
+  type: "similar",
+  a: "--surface",
+  b: "--bg",
+  max: 1.5,
 };
 
-const textVariable: ThemeVariable = {
-  name: "--text",
-  description: "Main text color",
-  defaultValue: "48 42 37",
-  contrastAgainst: "--bg",
-  minContrast: 4.5,
-};
-
-const contrastVariables = [backgroundVariable, textVariable];
-
-describe("validateThemeValues のコントラスト補正", () => {
-  it("背景と文字色が同じでも読める明度まで引き離される", () => {
-    const result = validateThemeValues(contrastVariables, { "--bg": "0 0 0", "--text": "0 0 0" });
-    const text = result.find((v) => v.name === "--text")!.value;
-    expect(result.find((v) => v.name === "--bg")!.value).toBe("0 0 0");
-    expect(ratioOf(text, "0 0 0")).toBeGreaterThanOrEqual(4.5);
+describe("checkConstraints", () => {
+  it("スクリーンショットで起きた組み合わせを違反として検出する", () => {
+    const violations = checkConstraints([textOnSurface, surfaceNearBg], {
+      "--bg": "26 16 8",
+      "--surface": "250 244 226",
+      "--text": "250 244 226",
+    });
+    expect(violations).toHaveLength(2);
+    expect(violations[0]).toContain("--text");
+    expect(violations[0]).toContain("--surface");
+    expect(violations[1]).toContain("apart");
   });
 
-  it("明るい背景では文字色が暗い方向へ補正される", () => {
-    const result = validateThemeValues(contrastVariables, {
-      "--bg": "255 255 255",
+  it("違反がなければ空になる", () => {
+    expect(
+      checkConstraints([textOnSurface, surfaceNearBg], {
+        "--bg": "26 16 8",
+        "--surface": "38 26 16",
+        "--text": "250 244 226",
+      }),
+    ).toEqual([]);
+  });
+
+  it("違反メッセージには実測値と要求値が含まれる", () => {
+    const [violation] = checkConstraints([textOnSurface], {
+      "--surface": "255 255 255",
       "--text": "250 250 250",
     });
-    const text = result.find((v) => v.name === "--text")!.value;
-    expect(ratioOf(text, "255 255 255")).toBeGreaterThanOrEqual(4.5);
-    expect(luminance(text)).toBeLessThan(luminance("250 250 250"));
+    expect(violation).toContain("255 255 255");
+    expect(violation).toContain("4.5:1");
   });
 
-  it("すでに条件を満たしている色は変更されない", () => {
-    const result = validateThemeValues(contrastVariables, {
-      "--bg": "255 255 255",
-      "--text": "20 20 20",
+  it("色として解釈できない値は違反にしない", () => {
+    expect(checkConstraints([textOnSurface], { "--text": "round", "--surface": "0 0 0" })).toEqual(
+      [],
+    );
+  });
+});
+
+describe("repairConstraints", () => {
+  it("カード背景を先に背景へ寄せてから文字色を引き離す", () => {
+    const repaired = repairConstraints([textOnSurface, surfaceNearBg], {
+      "--bg": "26 16 8",
+      "--surface": "250 244 226",
+      "--text": "250 244 226",
     });
-    expect(result.find((v) => v.name === "--text")!.value).toBe("20 20 20");
+    expect(ratioOf(repaired["--surface"], "26 16 8")).toBeLessThanOrEqual(1.5);
+    expect(ratioOf(repaired["--text"], repaired["--surface"])).toBeGreaterThanOrEqual(4.5);
+    expect(checkConstraints([textOnSurface, surfaceNearBg], repaired)).toEqual([]);
+  });
+
+  it("すでに満たしている値は変更されない", () => {
+    const values = { "--bg": "26 16 8", "--surface": "38 26 16", "--text": "250 244 226" };
+    expect(repairConstraints([textOnSurface, surfaceNearBg], values)).toEqual(values);
   });
 
   it("補正後も色味の方向は保たれる", () => {
-    const result = validateThemeValues(contrastVariables, {
-      "--bg": "10 10 10",
-      "--text": "0 0 60",
-    });
-    const [r, g, b] = result
-      .find((v) => v.name === "--text")!
-      .value.split(" ")
-      .map(Number);
-    expect(b).toBeGreaterThan(r);
-    expect(b).toBeGreaterThan(g);
-  });
-
-  it("contrastAgainstを持たない変数は補正されない", () => {
-    const result = validateThemeValues([backgroundVariable], { "--bg": "0 0 0" });
-    expect(result).toEqual([{ name: "--bg", value: "0 0 0" }]);
+    const repaired = repairConstraints(
+      [{ type: "contrast", foreground: "--text", background: "--bg", min: 4.5 }],
+      { "--bg": "10 10 10", "--text": "0 0 60" },
+    );
+    const [red, green, blue] = repaired["--text"].split(" ").map(Number);
+    expect(blue).toBeGreaterThan(red);
+    expect(blue).toBeGreaterThan(green);
   });
 });

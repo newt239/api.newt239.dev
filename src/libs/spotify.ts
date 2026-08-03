@@ -4,7 +4,7 @@ export const getSpotifyAccessToken = async (
   REFRESH_TOKEN: string,
 ) => {
   const token = btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`);
-  const accessTokenRes = (await fetch("https://accounts.spotify.com/api/token", {
+  const res = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: {
       Authorization: `Basic ${token}`,
@@ -14,18 +14,18 @@ export const getSpotifyAccessToken = async (
       grant_type: "refresh_token",
       refresh_token: REFRESH_TOKEN,
     }),
-  })
-    .then((res) => {
-      return res.json();
-    })
-    .catch((err) => {
-      console.error(err);
-      return null;
-    })) as { access_token: string } | null;
-  if (accessTokenRes) {
-    return accessTokenRes.access_token;
+  });
+  if (!res.ok) {
+    throw new Error(
+      `Spotify のアクセストークン取得に失敗しました (${res.status}): ${await res.text()}`,
+    );
   }
-  return null;
+
+  const { access_token } = (await res.json()) as { access_token?: string };
+  if (!access_token) {
+    throw new Error("Spotify のトークンレスポンスに access_token が含まれていません");
+  }
+  return access_token;
 };
 
 export type TopTrack = {
@@ -48,9 +48,6 @@ export const getMyTopTracks = async (
     SPOTIFY_CLIENT_SECRET,
     REFRESH_TOKEN,
   );
-  if (!accessToken) {
-    return [];
-  }
 
   const res = await fetch(
     "https://api.spotify.com/v1/me/top/tracks?time_range=short_term&limit=50",
@@ -61,7 +58,9 @@ export const getMyTopTracks = async (
     },
   );
   if (!res.ok) {
-    return [];
+    throw new Error(
+      `Spotify のトップトラック取得に失敗しました (${res.status}): ${await res.text()}`,
+    );
   }
 
   const data = (await res.json()) as {
@@ -75,10 +74,6 @@ export const getMyTopTracks = async (
       external_urls: { spotify: string };
     }>;
   };
-
-  if (!data.items) {
-    return [];
-  }
 
   return data.items.map((track) => ({
     name: track.name,

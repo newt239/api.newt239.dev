@@ -6,11 +6,15 @@ import OpenAI, { type APIError } from "openai";
 import {
   buildResponseFormat,
   buildSystemPrompt,
+  checkConstraints,
   defaultRequiredVariables,
+  repairConstraints,
   validateThemeValues,
 } from "~/libs/theme";
 
 import type { Bindings } from "~/types/bindings";
+
+const MAX_ATTEMPTS = 3;
 
 const themeVariableSchema = z.object({
   name: z.string().openapi({
@@ -44,15 +48,28 @@ const themeVariableSchema = z.object({
     example: 2,
     description: "kind が number の場合の上限",
   }),
-  contrastAgainst: z.string().optional().openapi({
-    example: "--bg",
-    description: "この変数が読めるだけの明度差を保つべき相手の変数名",
-  }),
-  minContrast: z.number().optional().openapi({
-    example: 4.5,
-    description: "contrastAgainst との間で最低限確保するWCAGコントラスト比",
-  }),
 });
+
+const themeConstraintSchema = z
+  .discriminatedUnion("type", [
+    z.object({
+      type: z.literal("contrast"),
+      foreground: z.string(),
+      background: z.string(),
+      min: z.number(),
+    }),
+    z.object({
+      type: z.literal("similar"),
+      a: z.string(),
+      b: z.string(),
+      max: z.number(),
+    }),
+  ])
+  .openapi({
+    example: { type: "contrast", foreground: "--text", background: "--surface", min: 4.5 },
+    description:
+      "画面上で実際に重なる色の組み合わせ。contrast は前景と背景が保つべき最低コントラスト比、similar は同系統であるべき2色が離れてよい上限",
+  });
 
 const generateThemeSchema = z.object({
   prompt: z.string().min(1, "Prompt is required").openapi({
@@ -61,6 +78,10 @@ const generateThemeSchema = z.object({
   }),
   requiredVariables: z.array(themeVariableSchema).optional().openapi({
     description: "生成するCSS変数の定義。指定しない場合はデフォルトの変数セットが使用されます。",
+  }),
+  constraints: z.array(themeConstraintSchema).optional().openapi({
+    description:
+      "守るべき色の組み合わせ。違反した場合は違反内容を伝えて再生成させ、それでも直らなければ決定的に補正します。",
   }),
 });
 
@@ -145,34 +166,56 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
     );
   }
 
-  const { prompt, requiredVariables } = c.req.valid("json");
+  const { prompt, requiredVariables, constraints } = c.req.valid("json");
   const variables = requiredVariables ?? defaultRequiredVariables;
+  const rules = constraints ?? [];
   const { OPENAI_API_KEY, DISCORD_WEBHOOK } = env(c);
   const openai = new OpenAI({
     apiKey: OPENAI_API_KEY,
   });
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5.6-luna",
-      messages: [
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+      { role: "system", content: buildSystemPrompt(variables, rules) },
+      { role: "user", content: prompt },
+    ];
+    let content = "";
+    let values: Record<string, string> = {};
+    let violations: string[] = [];
+    let attempts = 0;
+
+    while (attempts < MAX_ATTEMPTS) {
+      attempts++;
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5.6-luna",
+        messages,
+        response_format: buildResponseFormat(variables),
+      });
+      const message = completion.choices[0].message.content;
+      if (!message) {
+        throw new Error("Failed to generate theme.");
+      }
+      content = message;
+      values = validateThemeValues(variables, JSON.parse(message));
+      violations = checkConstraints(rules, values);
+      if (violations.length === 0) {
+        break;
+      }
+      messages.push(
+        { role: "assistant", content: message },
         {
-          role: "system",
-          content: buildSystemPrompt(variables),
+          role: "user",
+          content: `That theme breaks the readability rules:\n${violations.map((violation) => `- ${violation}`).join("\n")}\n\nReturn the whole JSON again. Keep the same mood and keep every value that already passes, but fix the colors listed above.`,
         },
-        { role: "user", content: prompt },
-      ],
-      response_format: buildResponseFormat(variables),
-    });
-    const content = completion.choices[0].message.content;
-    if (!content) {
-      throw new Error("Failed to generate theme.");
+      );
     }
+
+    const repaired = violations.length === 0 ? values : repairConstraints(rules, values);
     // 結果をd1に保存
     await c.env.DB.prepare("INSERT INTO themes (prompt, response) VALUES (?, ?)")
       .bind(prompt, content)
       .run();
-    const parsedContent: { [key: string]: string } = JSON.parse(content);
+    const parsedContent = repaired;
     // ディスコードに通知
     await fetch(DISCORD_WEBHOOK, {
       method: "POST",
@@ -185,7 +228,7 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
         embeds: [
           {
             title: "New Theme Generated",
-            description: `Prompt: \`\`${prompt}\`\`\n\nResponse:\n\`\`\`json\n${JSON.stringify(parsedContent, null, "\t")}\n\`\`\``,
+            description: `Prompt: \`\`${prompt}\`\`\n\nAttempts: ${attempts}/${MAX_ATTEMPTS}${violations.length === 0 ? "" : `\nRepaired after unmet rules:\n${violations.map((violation) => `- ${violation}`).join("\n")}`}\n\nResponse:\n\`\`\`json\n${JSON.stringify(parsedContent, null, "\t")}\n\`\`\``,
             timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
             color: 2664261,
             footer: {
@@ -200,7 +243,10 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
       {
         type: "success",
         message: "Successfully generated theme.",
-        variables: validateThemeValues(variables, parsedContent),
+        variables: variables.map((variable) => ({
+          name: variable.name,
+          value: parsedContent[variable.name],
+        })),
       },
       200,
     );

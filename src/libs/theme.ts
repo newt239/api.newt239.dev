@@ -6,9 +6,11 @@ export type ThemeVariable = {
   allowedValues?: string[];
   min?: number;
   max?: number;
-  contrastAgainst?: string;
-  minContrast?: number;
 };
+
+export type ThemeConstraint =
+  | { type: "contrast"; foreground: string; background: string; min: number }
+  | { type: "similar"; a: string; b: string; max: number };
 
 type Rgb = [number, number, number];
 
@@ -79,7 +81,10 @@ const contrastRatio = (a: Rgb, b: Rgb): number => {
   return (lighter + 0.05) / (darker + 0.05);
 };
 
-export const buildSystemPrompt = (variables: ThemeVariable[]): string => `
+export const buildSystemPrompt = (
+  variables: ThemeVariable[],
+  constraints: ThemeConstraint[] = [],
+): string => `
 # Instruction
 
 You are a bold, creative designer generating a visual theme for a personal portfolio website.
@@ -122,7 +127,25 @@ ${variables
     return `| ${variable.name} | ${variable.description} | ${type} | ${allowed} | ${variable.defaultValue} |`;
   })
   .join("\n")}
-`;
+${
+  constraints.length === 0
+    ? ""
+    : `
+# Readability rules
+
+These pairs are how the colors actually meet on screen. Every rule below is checked programmatically after you answer, and you will be asked to redo the theme if any of them fails — so satisfy them on the first try.
+
+${constraints
+  .map((constraint) =>
+    constraint.type === "contrast"
+      ? `- \`${constraint.foreground}\` placed on \`${constraint.background}\` must have a contrast ratio of at least ${constraint.min}:1`
+      : `- \`${constraint.a}\` must stay within ${constraint.max}:1 of \`${constraint.b}\` — they are variations of the same surface, never opposites`,
+  )
+  .join("\n")}
+
+Note that a card surface being close to the page background is just as important as text being readable. If you darken the page, darken the cards with it.
+`
+}`;
 
 export const buildResponseFormat = (variables: ThemeVariable[]) =>
   ({
@@ -149,11 +172,11 @@ export const buildResponseFormat = (variables: ThemeVariable[]) =>
 export const validateThemeValues = (
   variables: ThemeVariable[],
   generated: Record<string, unknown>,
-): { name: string; value: string }[] => {
-  const resolved = new Map<string, string>();
+): Record<string, string> => {
+  const resolved: Record<string, string> = {};
 
   for (const variable of variables) {
-    resolved.set(variable.name, variable.defaultValue);
+    resolved[variable.name] = variable.defaultValue;
     const value = generated[variable.name];
     if (typeof value !== "string") {
       continue;
@@ -161,7 +184,7 @@ export const validateThemeValues = (
     switch (variable.kind ?? "color") {
       case "color":
         if (parseRgb(value)) {
-          resolved.set(variable.name, value);
+          resolved[variable.name] = value;
         }
         break;
       case "number": {
@@ -171,55 +194,111 @@ export const validateThemeValues = (
           parsed >= (variable.min ?? Number.NEGATIVE_INFINITY) &&
           parsed <= (variable.max ?? Number.POSITIVE_INFINITY)
         ) {
-          resolved.set(variable.name, value);
+          resolved[variable.name] = value;
         }
         break;
       }
       case "enum":
         if ((variable.allowedValues ?? []).includes(value)) {
-          resolved.set(variable.name, value);
+          resolved[variable.name] = value;
         }
         break;
     }
   }
 
-  for (const variable of variables) {
-    if (!variable.contrastAgainst || !variable.minContrast) {
-      continue;
+  return resolved;
+};
+
+export const checkConstraints = (
+  constraints: ThemeConstraint[],
+  values: Record<string, string>,
+): string[] =>
+  constraints.flatMap((constraint) => {
+    if (constraint.type === "contrast") {
+      const foreground = parseRgb(values[constraint.foreground] ?? "");
+      const background = parseRgb(values[constraint.background] ?? "");
+      if (!foreground || !background) {
+        return [];
+      }
+      const ratio = contrastRatio(foreground, background);
+      return ratio >= constraint.min
+        ? []
+        : [
+            `${constraint.foreground} (${values[constraint.foreground]}) on ${constraint.background} (${values[constraint.background]}) is only ${ratio.toFixed(2)}:1, it must be at least ${constraint.min}:1`,
+          ];
     }
-    const foreground = parseRgb(resolved.get(variable.name) ?? "");
-    const background = parseRgb(resolved.get(variable.contrastAgainst) ?? "");
-    if (
-      !foreground ||
-      !background ||
-      contrastRatio(foreground, background) >= variable.minContrast
-    ) {
-      continue;
+    const a = parseRgb(values[constraint.a] ?? "");
+    const b = parseRgb(values[constraint.b] ?? "");
+    if (!a || !b) {
+      return [];
     }
-    const target =
-      contrastRatio(WHITE, background) >= contrastRatio(BLACK, background) ? WHITE : BLACK;
+    const ratio = contrastRatio(a, b);
+    return ratio <= constraint.max
+      ? []
+      : [
+          `${constraint.a} (${values[constraint.a]}) and ${constraint.b} (${values[constraint.b]}) are ${ratio.toFixed(2)}:1 apart, they must stay within ${constraint.max}:1`,
+        ];
+  });
+
+export const repairConstraints = (
+  constraints: ThemeConstraint[],
+  values: Record<string, string>,
+): Record<string, string> => {
+  const repaired = { ...values };
+  const approach = (source: Rgb, target: Rgb, satisfied: (candidate: Rgb) => boolean): Rgb => {
     let low = 0;
     let high = 1;
-    let adjusted = target;
+    let result = target;
     for (let step = 0; step < 16; step++) {
       const middle = (low + high) / 2;
       const candidate: Rgb = [
-        Math.round(foreground[0] + (target[0] - foreground[0]) * middle),
-        Math.round(foreground[1] + (target[1] - foreground[1]) * middle),
-        Math.round(foreground[2] + (target[2] - foreground[2]) * middle),
+        Math.round(source[0] + (target[0] - source[0]) * middle),
+        Math.round(source[1] + (target[1] - source[1]) * middle),
+        Math.round(source[2] + (target[2] - source[2]) * middle),
       ];
-      if (contrastRatio(candidate, background) >= variable.minContrast) {
+      if (satisfied(candidate)) {
         high = middle;
-        adjusted = candidate;
+        result = candidate;
       } else {
         low = middle;
       }
     }
-    resolved.set(variable.name, adjusted.join(" "));
+    return result;
+  };
+
+  for (const constraint of constraints) {
+    if (constraint.type !== "similar") {
+      continue;
+    }
+    const a = parseRgb(repaired[constraint.a] ?? "");
+    const b = parseRgb(repaired[constraint.b] ?? "");
+    if (!a || !b || contrastRatio(a, b) <= constraint.max) {
+      continue;
+    }
+    repaired[constraint.a] = approach(
+      a,
+      b,
+      (candidate) => contrastRatio(candidate, b) <= constraint.max,
+    ).join(" ");
   }
 
-  return variables.map((variable) => ({
-    name: variable.name,
-    value: resolved.get(variable.name) ?? variable.defaultValue,
-  }));
+  for (const constraint of constraints) {
+    if (constraint.type !== "contrast") {
+      continue;
+    }
+    const foreground = parseRgb(repaired[constraint.foreground] ?? "");
+    const background = parseRgb(repaired[constraint.background] ?? "");
+    if (!foreground || !background || contrastRatio(foreground, background) >= constraint.min) {
+      continue;
+    }
+    const target =
+      contrastRatio(WHITE, background) >= contrastRatio(BLACK, background) ? WHITE : BLACK;
+    repaired[constraint.foreground] = approach(
+      foreground,
+      target,
+      (candidate) => contrastRatio(candidate, background) >= constraint.min,
+    ).join(" ");
+  }
+
+  return repaired;
 };

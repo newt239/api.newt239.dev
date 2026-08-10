@@ -22,8 +22,8 @@
     "@spotify/web-api-ts-sdk": "1.2.0",
     "dayjs": "1.11.21",
     "discord-interactions": "4.4.0",
-    "hono": "4.13.0",
-    "openai": "7.4.0",
+    "hono": "4.12.34",
+    "openai": "7.3.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
@@ -39,5 +39,5 @@
     "vitest": "4.1.10",
     "wrangler": "4.118.0"
   },
-  "packageManager": "pnpm@11.15.1"
+  "packageManager": "pnpm@11.21.0"
 }

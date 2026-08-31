@@ -5,6 +5,8 @@ import { XMLParser } from "fast-xml-parser";
 dayjs.extend(utc);
 
 const DOCSWELL_FEED_URL = "https://www.docswell.com/user/newt239/feed";
+const FEED_TIMEOUT_MS = 5000;
+const MAX_ATTEMPTS = 3;
 
 export type DocswellSlide = {
   title: string;
@@ -14,9 +16,24 @@ export type DocswellSlide = {
 };
 
 export const getDocswellSlides = async (): Promise<DocswellSlide[]> => {
-  const res = await fetch(DOCSWELL_FEED_URL);
-  if (!res.ok) {
-    throw new Error(`Docswell のフィード取得に失敗しました (${res.status}): ${await res.text()}`);
+  let body = "";
+  for (let attempt = 1; ; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(DOCSWELL_FEED_URL, { signal: AbortSignal.timeout(FEED_TIMEOUT_MS) });
+    } catch (error) {
+      if (attempt === MAX_ATTEMPTS) {
+        throw new Error(`Docswell のフィード取得に失敗しました: ${String(error)}`);
+      }
+      continue;
+    }
+    if (res.ok) {
+      body = await res.text();
+      break;
+    }
+    if (res.status < 500 || attempt === MAX_ATTEMPTS) {
+      throw new Error(`Docswell のフィード取得に失敗しました (${res.status}): ${await res.text()}`);
+    }
   }
 
   const parser = new XMLParser({
@@ -25,7 +42,7 @@ export const getDocswellSlides = async (): Promise<DocswellSlide[]> => {
     parseTagValue: false,
     isArray: (name) => name === "item",
   });
-  const feed = parser.parse(await res.text()) as {
+  const feed = parser.parse(body) as {
     rss?: {
       channel?: {
         item?: Array<{

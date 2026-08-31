@@ -40,7 +40,7 @@ const twoItemsFeed = `<?xml version="1.0" encoding="UTF-8"?>
 
 describe("getDocswellSlides", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   afterEach(() => {
@@ -102,8 +102,8 @@ describe("getDocswellSlides", () => {
     expect(slides[1].thumbnail).toBe("https://bcdn.docswell.com/page/BBBBBB.jpg?width=640");
   });
 
-  it("フィードの取得に失敗した場合はエラーを投げる", async () => {
-    mockFetch.mockResolvedValueOnce({
+  it("5xx が続く場合は 3 回試したうえでエラーを投げる", async () => {
+    mockFetch.mockResolvedValue({
       ok: false,
       status: 503,
       text: vi.fn().mockResolvedValue("Service Unavailable"),
@@ -112,6 +112,45 @@ describe("getDocswellSlides", () => {
     await expect(getDocswellSlides()).rejects.toThrow(
       "Docswell のフィード取得に失敗しました (503)",
     );
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("522 のあとに成功した場合はスライド一覧を返す", async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 522,
+        text: vi.fn().mockResolvedValue("error code: 522"),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        text: vi.fn().mockResolvedValue(singleItemFeed),
+      });
+
+    const slides = await getDocswellSlides();
+
+    expect(slides).toHaveLength(1);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it("4xx の場合は再試行せずにエラーを投げる", async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: vi.fn().mockResolvedValue("Not Found"),
+    });
+
+    await expect(getDocswellSlides()).rejects.toThrow(
+      "Docswell のフィード取得に失敗しました (404)",
+    );
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("通信そのものに失敗した場合は 3 回試したうえでエラーを投げる", async () => {
+    mockFetch.mockRejectedValue(new Error("The operation was aborted due to timeout"));
+
+    await expect(getDocswellSlides()).rejects.toThrow("Docswell のフィード取得に失敗しました:");
+    expect(mockFetch).toHaveBeenCalledTimes(3);
   });
 
   it("本文が RSS でない場合はエラーを投げる", async () => {

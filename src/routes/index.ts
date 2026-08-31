@@ -8,6 +8,7 @@ import commandsRoute from "~/routes/discord/commands";
 import interactionsRoute from "~/routes/discord/interactions";
 import messagesRoute from "~/routes/discord/messages";
 import registerRoute from "~/routes/discord/register";
+import docswellSlidesRoute from "~/routes/docswell/slides";
 import iframeRoute from "~/routes/lab/iframe";
 import postRoute from "~/routes/lab/post";
 import mcpRoute from "~/routes/mcp";
@@ -52,6 +53,8 @@ app.route("/discord/channels", messagesRoute);
 // AI routes
 app.route("/ai/generate-theme", generateThemeRoute);
 app.route("/annict/library", libraryRoute);
+// Docswell route
+app.route("/docswell/slides", docswellSlidesRoute);
 // Lab routes
 app.route("/lab/post", postRoute);
 app.route("/lab/iframe", iframeRoute);

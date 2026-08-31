@@ -2,6 +2,8 @@ name = "api"
 main = "src/routes/index.ts"
 compatibility_date = "2026-08-20"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = true
 
 [[routes]]
 pattern = "api.newt239.dev"

@@ -28,7 +28,7 @@ export default defineConfig(async () => {
       cloudflareTest({
         miniflare: {
           compatibilityFlags: ["nodejs_compat"],
-          compatibilityDate: "2024-09-23",
+          compatibilityDate: "2026-08-20",
           d1Databases: ["DB"],
           bindings: {
             TEST_MIGRATIONS: migrations,

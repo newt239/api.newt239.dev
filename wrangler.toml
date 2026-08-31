@@ -1,0 +1,14 @@
+name = "api"
+main = "src/routes/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[routes]]
+pattern = "api.newt239.dev"
+custom_domain = true
+
+[[d1_databases]]
+binding = "DB" # i.e. available in your Worker on env.DB
+database_name = "newt239.dev"
+database_id = "df6a8839-c1ac-451f-a90b-2fef0047538c"
+migrations_dir = "db"

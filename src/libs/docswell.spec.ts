@@ -55,7 +55,9 @@ describe("getDocswellSlides", () => {
 
     const slides = await getDocswellSlides();
 
-    expect(mockFetch).toHaveBeenCalledWith("https://www.docswell.com/user/newt239/feed");
+    expect(mockFetch).toHaveBeenCalledWith("https://www.docswell.com/user/newt239/feed", {
+      signal: expect.any(AbortSignal),
+    });
     expect(slides).toEqual([
       {
         title: 'hidden="until-found"を使ってアクセシブルな折りたたみを実装する',

@@ -28,7 +28,7 @@
     "zod": "4.5.4"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "0.22.0",
+    "@cloudflare/vitest-plugin": "1.1.4",
     "@cloudflare/workers-types": "5.20260903.1",
     "@types/node": "26.4.1",
     "discord-api-types": "0.38.55",
@@ -37,8 +37,15 @@
     "oxlint": "1.81.0",
     "oxlint-tsgolint": "7.0.2001",
     "typescript": "7.0.2",
-    "vitest": "5.0.0",
+    "vitest": "4.1.11",
     "wrangler": "4.129.0"
   },
-  "packageManager": "pnpm@11.21.0"
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "26.8.2",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.3.4"
 }

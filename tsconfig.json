@@ -9,11 +9,7 @@
     "paths": {
       "~/*": ["./src/*"]
     },
-    "types": [
-      "vitest/globals",
-      "@cloudflare/workers-types",
-      "@cloudflare/vitest-pool-workers/types"
-    ],
+    "types": ["vitest/globals", "@cloudflare/workers-types", "@cloudflare/vitest-plugin/types"],
     "strict": true,
     "noEmit": true,
     "resolveJsonModule": true,

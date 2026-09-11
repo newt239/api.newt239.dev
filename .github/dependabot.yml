@@ -3,12 +3,15 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       timezone: "Asia/Tokyo"
       time: "08:00"
     target-branch: "main"
     cooldown:
       default-days: 7
+    ignore:
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
     groups:
       all-dependencies:
         patterns:
@@ -16,10 +19,12 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       timezone: "Asia/Tokyo"
       time: "08:00"
     target-branch: "main"
+    cooldown:
+      default-days: 7
     groups:
       all-actions:
         patterns:

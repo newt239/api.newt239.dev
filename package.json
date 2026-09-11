@@ -43,9 +43,9 @@
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "26.7.0",
+      "version": "26.8.2",
       "onFail": "download"
     }
   },
-  "packageManager": "pnpm@11.21.0"
+  "packageManager": "pnpm@12.3.4"
 }

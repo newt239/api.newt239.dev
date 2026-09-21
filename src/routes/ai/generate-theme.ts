@@ -8,7 +8,6 @@ import {
   buildSystemPrompt,
   checkConstraints,
   defaultRequiredVariables,
-  detectColorFormat,
   repairConstraints,
   validateThemeValues,
 } from "~/libs/theme";
@@ -29,8 +28,7 @@ const themeVariableSchema = z.object({
   }),
   defaultValue: z.string().openapi({
     example: "0.55 0.17 255",
-    description:
-      "デフォルト値。生成された値が不正だった場合はこの値が使われる。色は OKLCH の `L C H`、または sRGB の `R G B` で、ここで使った形式が生成結果の形式になる",
+    description: "デフォルト値。生成された値が不正だった場合はこの値が使われる",
   }),
   kind: z.enum(["color", "number", "enum"]).optional().openapi({
     example: "enum",
@@ -85,6 +83,11 @@ const generateThemeSchema = z.object({
   constraints: z.array(themeConstraintSchema).optional().openapi({
     description:
       "守るべき色の組み合わせ。違反した場合は違反内容を伝えて再生成させ、それでも直らなければ決定的に補正します。",
+  }),
+  colorFormat: z.enum(["rgb", "oklch"]).default("rgb").openapi({
+    example: "oklch",
+    description:
+      "色の値の形式。rgb は `R G B`（各 0–255 の整数）、oklch は `L C H`（L は 0–1、C は 0–0.4、H は 0–360）。requiredVariables の defaultValue もこの形式で渡してください",
   }),
 });
 
@@ -171,11 +174,9 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
     );
   }
 
-  const { prompt, requiredVariables, constraints } = c.req.valid("json");
+  const { prompt, requiredVariables, constraints, colorFormat } = c.req.valid("json");
   const variables = requiredVariables ?? defaultRequiredVariables;
   const rules = constraints ?? [];
-  // 値の形式は呼び出し側が送ってきた defaultValue から決まる
-  const format = detectColorFormat(variables);
   const { OPENAI_API_KEY, DISCORD_WEBHOOK } = env(c);
   const openai = new OpenAI({
     apiKey: OPENAI_API_KEY,
@@ -195,7 +196,7 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
 
   try {
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: "system", content: buildSystemPrompt(variables, rules, format) },
+      { role: "system", content: buildSystemPrompt(variables, colorFormat, rules) },
       { role: "user", content: prompt },
     ];
     let content = "";
@@ -215,8 +216,8 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
         throw new Error("Failed to generate theme.");
       }
       content = message;
-      values = validateThemeValues(variables, JSON.parse(message), format);
-      violations = checkConstraints(rules, values, format);
+      values = validateThemeValues(variables, JSON.parse(message), colorFormat);
+      violations = checkConstraints(rules, values, colorFormat);
       if (violations.length === 0) {
         break;
       }
@@ -229,14 +230,15 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
       );
     }
 
-    const repaired = violations.length === 0 ? values : repairConstraints(rules, values, format);
+    const repaired =
+      violations.length === 0 ? values : repairConstraints(rules, values, colorFormat);
     // 結果をd1に保存
     await c.env.DB.prepare("INSERT INTO themes (prompt, response) VALUES (?, ?)")
       .bind(prompt, content)
       .run();
     const parsedContent = repaired;
     // ディスコードに通知
-    const preview = await renderThemePreview(variables, parsedContent, rules, format).catch(
+    const preview = await renderThemePreview(variables, parsedContent, rules, colorFormat).catch(
       (error) => {
         console.error(error);
         return null;

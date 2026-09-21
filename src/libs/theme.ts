@@ -74,14 +74,6 @@ export const defaultRequiredVariables: ThemeVariable[] = [
   },
 ];
 
-export const detectColorFormat = (variables: ThemeVariable[]): ColorFormat =>
-  variables.some(
-    (variable) =>
-      (variable.kind ?? "color") === "color" && !RGB_PATTERN.test(variable.defaultValue),
-  )
-    ? "oklch"
-    : "rgb";
-
 export const parseColor = (value: string, format: ColorFormat): Oklch | null => {
   if (format === "rgb") {
     if (!RGB_PATTERN.test(value)) {
@@ -141,8 +133,8 @@ const colorFormatRule = (format: ColorFormat) =>
 
 export const buildSystemPrompt = (
   variables: ThemeVariable[],
+  format: ColorFormat,
   constraints: ThemeConstraint[] = [],
-  format: ColorFormat = detectColorFormat(variables),
 ): string => `
 # Instruction
 
@@ -236,7 +228,7 @@ export const buildResponseFormat = (variables: ThemeVariable[]) =>
 export const validateThemeValues = (
   variables: ThemeVariable[],
   generated: Record<string, unknown>,
-  format: ColorFormat = detectColorFormat(variables),
+  format: ColorFormat,
 ): Record<string, string> => {
   const resolved: Record<string, string> = {};
 
@@ -280,7 +272,7 @@ export const validateThemeValues = (
 export const checkConstraints = (
   constraints: ThemeConstraint[],
   values: Record<string, string>,
-  format: ColorFormat = "rgb",
+  format: ColorFormat,
 ): string[] =>
   constraints.flatMap((constraint) => {
     if (constraint.type === "contrast") {
@@ -312,7 +304,7 @@ export const checkConstraints = (
 export const repairConstraints = (
   constraints: ThemeConstraint[],
   values: Record<string, string>,
-  format: ColorFormat = "rgb",
+  format: ColorFormat,
 ): Record<string, string> => {
   const repaired = { ...values };
   // 丸めたあとの値で判定する。二分探索が境界ちょうどへ収束するため、丸め前で判定すると出力が基準を割る

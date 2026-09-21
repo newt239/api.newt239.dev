@@ -4,7 +4,6 @@ import {
   buildResponseFormat,
   buildSystemPrompt,
   checkConstraints,
-  detectColorFormat,
   repairConstraints,
   validateThemeValues,
 } from "./theme";
@@ -42,30 +41,16 @@ const oklchVariable: ThemeVariable = {
   defaultValue: "0.982 0.014 70",
 };
 
-describe("detectColorFormat", () => {
-  it("整数3つのデフォルト値だけならrgbとみなす", () => {
-    expect(detectColorFormat(variables)).toBe("rgb");
-  });
-
-  it("小数を含むデフォルト値があればoklchとみなす", () => {
-    expect(detectColorFormat([oklchVariable, numberVariable])).toBe("oklch");
-  });
-
-  it("色以外の変数はフォーマットの判定に使われない", () => {
-    expect(detectColorFormat([colorVariable, numberVariable, enumVariable])).toBe("rgb");
-  });
-});
-
 describe("buildSystemPrompt", () => {
   it("種類ごとの値のフォーマットが指示される", () => {
-    const prompt = buildSystemPrompt(variables);
+    const prompt = buildSystemPrompt(variables, "rgb");
     expect(prompt).toContain("**color**");
     expect(prompt).toContain("**number**");
     expect(prompt).toContain("**enum**");
   });
 
   it("変数の表に種類と候補が含まれる", () => {
-    const prompt = buildSystemPrompt(variables);
+    const prompt = buildSystemPrompt(variables, "rgb");
     expect(prompt).toContain(
       "| --radius-scale | Corner rounding multiplier | number (0–2) | - | 1 |",
     );
@@ -73,18 +58,18 @@ describe("buildSystemPrompt", () => {
   });
 
   it("kindを省略した変数はcolorとして扱われる", () => {
-    const prompt = buildSystemPrompt([colorVariable]);
+    const prompt = buildSystemPrompt([colorVariable], "rgb");
     expect(prompt).toContain("| --bg | Page background color | color | - | 255 248 240 |");
   });
 
   it("rgbのときはRGBの書式が指示される", () => {
-    const prompt = buildSystemPrompt([colorVariable]);
+    const prompt = buildSystemPrompt([colorVariable], "rgb");
     expect(prompt).toContain("three space-separated integers (R G B)");
     expect(prompt).not.toContain("OKLCH");
   });
 
   it("oklchのときはLCHの書式と色相をそろえる指針が指示される", () => {
-    const prompt = buildSystemPrompt([oklchVariable]);
+    const prompt = buildSystemPrompt([oklchVariable], "oklch");
     expect(prompt).toContain("three space-separated numbers (L C H)");
     expect(prompt).toContain("**Harmony**");
   });
@@ -114,46 +99,50 @@ describe("buildResponseFormat", () => {
 describe("validateThemeValues", () => {
   it("妥当な値はそのまま返される", () => {
     expect(
-      validateThemeValues(variables, {
-        "--bg": "10 20 30",
-        "--radius-scale": "0.5",
-        "--corner-shape": "bevel",
-      }),
+      validateThemeValues(
+        variables,
+        {
+          "--bg": "10 20 30",
+          "--radius-scale": "0.5",
+          "--corner-shape": "bevel",
+        },
+        "rgb",
+      ),
     ).toEqual({ "--bg": "10 20 30", "--radius-scale": "0.5", "--corner-shape": "bevel" });
   });
 
   it("RGBの形式でない色はデフォルト値に落とされる", () => {
-    expect(validateThemeValues([colorVariable], { "--bg": "#ff0000" })).toEqual({
+    expect(validateThemeValues([colorVariable], { "--bg": "#ff0000" }, "rgb")).toEqual({
       "--bg": "255 248 240",
     });
   });
 
   it("255を超えるRGBはデフォルト値に落とされる", () => {
-    expect(validateThemeValues([colorVariable], { "--bg": "300 20 30" })).toEqual({
+    expect(validateThemeValues([colorVariable], { "--bg": "300 20 30" }, "rgb")).toEqual({
       "--bg": "255 248 240",
     });
   });
 
   it("範囲外の数値はデフォルト値に落とされる", () => {
-    expect(validateThemeValues([numberVariable], { "--radius-scale": "5" })).toEqual({
+    expect(validateThemeValues([numberVariable], { "--radius-scale": "5" }, "rgb")).toEqual({
       "--radius-scale": "1",
     });
   });
 
   it("数値でない値はデフォルト値に落とされる", () => {
-    expect(validateThemeValues([numberVariable], { "--radius-scale": "1rem" })).toEqual({
+    expect(validateThemeValues([numberVariable], { "--radius-scale": "1rem" }, "rgb")).toEqual({
       "--radius-scale": "1",
     });
   });
 
   it("候補にない値はデフォルト値に落とされる", () => {
-    expect(validateThemeValues([enumVariable], { "--corner-shape": "squircle" })).toEqual({
+    expect(validateThemeValues([enumVariable], { "--corner-shape": "squircle" }, "rgb")).toEqual({
       "--corner-shape": "round",
     });
   });
 
   it("値が欠けている場合もデフォルト値で補われる", () => {
-    expect(validateThemeValues(variables, {})).toEqual({
+    expect(validateThemeValues(variables, {}, "rgb")).toEqual({
       "--bg": "255 248 240",
       "--radius-scale": "1",
       "--corner-shape": "round",
@@ -188,11 +177,11 @@ const surfaceNearBg: ThemeConstraint = {
 
 describe("checkConstraints", () => {
   it("スクリーンショットで起きた組み合わせを違反として検出する", () => {
-    const violations = checkConstraints([textOnSurface, surfaceNearBg], {
-      "--bg": "26 16 8",
-      "--surface": "250 244 226",
-      "--text": "250 244 226",
-    });
+    const violations = checkConstraints(
+      [textOnSurface, surfaceNearBg],
+      { "--bg": "26 16 8", "--surface": "250 244 226", "--text": "250 244 226" },
+      "rgb",
+    );
     expect(violations).toHaveLength(2);
     expect(violations[0]).toContain("--text");
     expect(violations[0]).toContain("--surface");
@@ -201,51 +190,53 @@ describe("checkConstraints", () => {
 
   it("違反がなければ空になる", () => {
     expect(
-      checkConstraints([textOnSurface, surfaceNearBg], {
-        "--bg": "26 16 8",
-        "--surface": "38 26 16",
-        "--text": "250 244 226",
-      }),
+      checkConstraints(
+        [textOnSurface, surfaceNearBg],
+        { "--bg": "26 16 8", "--surface": "38 26 16", "--text": "250 244 226" },
+        "rgb",
+      ),
     ).toEqual([]);
   });
 
   it("違反メッセージには実測値と要求値が含まれる", () => {
-    const [violation] = checkConstraints([textOnSurface], {
-      "--surface": "255 255 255",
-      "--text": "250 250 250",
-    });
+    const [violation] = checkConstraints(
+      [textOnSurface],
+      { "--surface": "255 255 255", "--text": "250 250 250" },
+      "rgb",
+    );
     expect(violation).toContain("255 255 255");
     expect(violation).toContain("4.5:1");
   });
 
   it("色として解釈できない値は違反にしない", () => {
-    expect(checkConstraints([textOnSurface], { "--text": "round", "--surface": "0 0 0" })).toEqual(
-      [],
-    );
+    expect(
+      checkConstraints([textOnSurface], { "--text": "round", "--surface": "0 0 0" }, "rgb"),
+    ).toEqual([]);
   });
 });
 
 describe("repairConstraints", () => {
   it("カード背景を先に背景へ寄せてから文字色を引き離す", () => {
-    const repaired = repairConstraints([textOnSurface, surfaceNearBg], {
-      "--bg": "26 16 8",
-      "--surface": "250 244 226",
-      "--text": "250 244 226",
-    });
+    const repaired = repairConstraints(
+      [textOnSurface, surfaceNearBg],
+      { "--bg": "26 16 8", "--surface": "250 244 226", "--text": "250 244 226" },
+      "rgb",
+    );
     expect(ratioOf(repaired["--surface"], "26 16 8")).toBeLessThanOrEqual(1.5);
     expect(ratioOf(repaired["--text"], repaired["--surface"])).toBeGreaterThanOrEqual(4.5);
-    expect(checkConstraints([textOnSurface, surfaceNearBg], repaired)).toEqual([]);
+    expect(checkConstraints([textOnSurface, surfaceNearBg], repaired, "rgb")).toEqual([]);
   });
 
   it("すでに満たしている値は変更されない", () => {
     const values = { "--bg": "26 16 8", "--surface": "38 26 16", "--text": "250 244 226" };
-    expect(repairConstraints([textOnSurface, surfaceNearBg], values)).toEqual(values);
+    expect(repairConstraints([textOnSurface, surfaceNearBg], values, "rgb")).toEqual(values);
   });
 
   it("補正後も色味の方向は保たれる", () => {
     const repaired = repairConstraints(
       [{ type: "contrast", foreground: "--text", background: "--bg", min: 4.5 }],
       { "--bg": "10 10 10", "--text": "0 0 60" },
+      "rgb",
     );
     const [red, green, blue] = repaired["--text"].split(" ").map(Number);
     expect(blue).toBeGreaterThan(red);
@@ -257,29 +248,33 @@ describe("OKLCHの値", () => {
   const oklchVariables = [oklchVariable, numberVariable];
 
   it("妥当な値はそのまま返される", () => {
-    expect(validateThemeValues(oklchVariables, { "--bg": "0.55 0.17 255" })).toEqual({
+    expect(validateThemeValues(oklchVariables, { "--bg": "0.55 0.17 255" }, "oklch")).toEqual({
       "--bg": "0.55 0.17 255",
       "--radius-scale": "1",
     });
   });
 
   it("RGBの形式はデフォルト値に落とされる", () => {
-    expect(validateThemeValues([oklchVariable], { "--bg": "255 248 240" })).toEqual({
+    expect(validateThemeValues([oklchVariable], { "--bg": "255 248 240" }, "oklch")).toEqual({
       "--bg": "0.982 0.014 70",
     });
   });
 
   it("範囲外の値はデフォルト値に落とされる", () => {
-    expect(validateThemeValues([oklchVariable], { "--bg": "1.5 0.1 200" })).toEqual({
+    expect(validateThemeValues([oklchVariable], { "--bg": "1.5 0.1 200" }, "oklch")).toEqual({
       "--bg": "0.982 0.014 70",
     });
-    expect(validateThemeValues([oklchVariable], { "--bg": "0.5 0.1 400" })).toEqual({
+    expect(validateThemeValues([oklchVariable], { "--bg": "0.5 0.1 400" }, "oklch")).toEqual({
       "--bg": "0.982 0.014 70",
     });
   });
 
   it("sRGBのガマット外の彩度はマッピング後の値に置き換えられる", () => {
-    const { "--bg": mapped } = validateThemeValues([oklchVariable], { "--bg": "0.75 0.4 140" });
+    const { "--bg": mapped } = validateThemeValues(
+      [oklchVariable],
+      { "--bg": "0.75 0.4 140" },
+      "oklch",
+    );
     const [, chroma] = mapped.split(" ").map(Number);
     expect(chroma).toBeLessThan(0.4);
     expect(checkConstraints([], { "--bg": mapped }, "oklch")).toEqual([]);

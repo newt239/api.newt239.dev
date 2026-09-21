@@ -20,6 +20,7 @@
     "@hono/zod-openapi": "1.6.2",
     "@modelcontextprotocol/sdk": "1.30.0",
     "@spotify/web-api-ts-sdk": "1.2.0",
+    "culori": "4.0.2",
     "dayjs": "1.11.23",
     "discord-interactions": "4.4.0",
     "fast-xml-parser": "5.11.1",
@@ -30,6 +31,7 @@
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.1.4",
     "@cloudflare/workers-types": "5.20260903.1",
+    "@types/culori": "4.0.1",
     "@types/node": "26.4.1",
     "discord-api-types": "0.38.55",
     "knip": "6.34.0",

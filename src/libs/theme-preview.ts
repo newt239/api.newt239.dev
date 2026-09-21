@@ -1,6 +1,6 @@
-import { parseRgb } from "~/libs/theme";
+import { parseColor, toRgb255 } from "~/libs/theme";
 
-import type { ThemeConstraint, ThemeVariable } from "~/libs/theme";
+import type { ColorFormat, ThemeConstraint, ThemeVariable } from "~/libs/theme";
 
 const GLYPHS: Record<string, string[]> = {
   a: [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
@@ -93,22 +93,26 @@ const buildChunk = (type: string, data: Uint8Array): Uint8Array => {
   return chunk;
 };
 
+const swatch = (value: string | undefined, format: ColorFormat) => {
+  const color = parseColor(value ?? "", format);
+  return color ? toRgb255(color) : null;
+};
+
 export const renderThemePreview = async (
   variables: ThemeVariable[],
   values: Record<string, string>,
   constraints: ThemeConstraint[],
+  format: ColorFormat,
 ): Promise<Uint8Array<ArrayBuffer>> => {
   const rows = variables
     .filter((variable) => (variable.kind ?? "color") === "color")
     .slice(0, MAX_ROWS)
     .map((variable) => {
-      const rgb = parseRgb(values[variable.name] ?? "");
+      const rgb = swatch(values[variable.name], format);
       return {
         name: variable.name,
         rgb,
-        value: rgb
-          ? `#${rgb.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`
-          : "no value",
+        value: rgb ? (values[variable.name] ?? "") : "no value",
       };
     });
 
@@ -117,8 +121,8 @@ export const renderThemePreview = async (
     .slice(0, MAX_BANDS)
     .map((constraint) => ({
       label: `${constraint.foreground} on ${constraint.background} ${constraint.min}:1`,
-      foreground: parseRgb(values[constraint.foreground] ?? ""),
-      background: parseRgb(values[constraint.background] ?? ""),
+      foreground: swatch(values[constraint.foreground], format),
+      background: swatch(values[constraint.background], format),
     }));
 
   const width = Math.min(

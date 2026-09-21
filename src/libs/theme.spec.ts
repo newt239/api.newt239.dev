@@ -4,6 +4,7 @@ import {
   buildResponseFormat,
   buildSystemPrompt,
   checkConstraints,
+  detectColorFormat,
   repairConstraints,
   validateThemeValues,
 } from "./theme";
@@ -35,6 +36,26 @@ const enumVariable: ThemeVariable = {
 
 const variables = [colorVariable, numberVariable, enumVariable];
 
+const oklchVariable: ThemeVariable = {
+  name: "--bg",
+  description: "Page background color",
+  defaultValue: "0.982 0.014 70",
+};
+
+describe("detectColorFormat", () => {
+  it("整数3つのデフォルト値だけならrgbとみなす", () => {
+    expect(detectColorFormat(variables)).toBe("rgb");
+  });
+
+  it("小数を含むデフォルト値があればoklchとみなす", () => {
+    expect(detectColorFormat([oklchVariable, numberVariable])).toBe("oklch");
+  });
+
+  it("色以外の変数はフォーマットの判定に使われない", () => {
+    expect(detectColorFormat([colorVariable, numberVariable, enumVariable])).toBe("rgb");
+  });
+});
+
 describe("buildSystemPrompt", () => {
   it("種類ごとの値のフォーマットが指示される", () => {
     const prompt = buildSystemPrompt(variables);
@@ -54,6 +75,18 @@ describe("buildSystemPrompt", () => {
   it("kindを省略した変数はcolorとして扱われる", () => {
     const prompt = buildSystemPrompt([colorVariable]);
     expect(prompt).toContain("| --bg | Page background color | color | - | 255 248 240 |");
+  });
+
+  it("rgbのときはRGBの書式が指示される", () => {
+    const prompt = buildSystemPrompt([colorVariable]);
+    expect(prompt).toContain("three space-separated integers (R G B)");
+    expect(prompt).not.toContain("OKLCH");
+  });
+
+  it("oklchのときはLCHの書式と色相をそろえる指針が指示される", () => {
+    const prompt = buildSystemPrompt([oklchVariable]);
+    expect(prompt).toContain("three space-separated numbers (L C H)");
+    expect(prompt).toContain("**Harmony**");
   });
 });
 
@@ -217,5 +250,60 @@ describe("repairConstraints", () => {
     const [red, green, blue] = repaired["--text"].split(" ").map(Number);
     expect(blue).toBeGreaterThan(red);
     expect(blue).toBeGreaterThan(green);
+  });
+});
+
+describe("OKLCHの値", () => {
+  const oklchVariables = [oklchVariable, numberVariable];
+
+  it("妥当な値はそのまま返される", () => {
+    expect(validateThemeValues(oklchVariables, { "--bg": "0.55 0.17 255" })).toEqual({
+      "--bg": "0.55 0.17 255",
+      "--radius-scale": "1",
+    });
+  });
+
+  it("RGBの形式はデフォルト値に落とされる", () => {
+    expect(validateThemeValues([oklchVariable], { "--bg": "255 248 240" })).toEqual({
+      "--bg": "0.982 0.014 70",
+    });
+  });
+
+  it("範囲外の値はデフォルト値に落とされる", () => {
+    expect(validateThemeValues([oklchVariable], { "--bg": "1.5 0.1 200" })).toEqual({
+      "--bg": "0.982 0.014 70",
+    });
+    expect(validateThemeValues([oklchVariable], { "--bg": "0.5 0.1 400" })).toEqual({
+      "--bg": "0.982 0.014 70",
+    });
+  });
+
+  it("sRGBのガマット外の彩度はマッピング後の値に置き換えられる", () => {
+    const { "--bg": mapped } = validateThemeValues([oklchVariable], { "--bg": "0.75 0.4 140" });
+    const [, chroma] = mapped.split(" ").map(Number);
+    expect(chroma).toBeLessThan(0.4);
+    expect(checkConstraints([], { "--bg": mapped }, "oklch")).toEqual([]);
+  });
+
+  it("コントラスト違反を検出できる", () => {
+    const violations = checkConstraints(
+      [textOnSurface],
+      { "--text": "0.95 0.01 70", "--surface": "0.93 0.01 70" },
+      "oklch",
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toContain("4.5:1");
+  });
+
+  it("補正は色相を保ったまま明度だけを動かす", () => {
+    const repaired = repairConstraints(
+      [textOnSurface],
+      { "--text": "0.8 0.08 255", "--surface": "0.93 0.01 70" },
+      "oklch",
+    );
+    const [lightness, , hue] = repaired["--text"].split(" ").map(Number);
+    expect(hue).toBeCloseTo(255, 0);
+    expect(lightness).toBeLessThan(0.8);
+    expect(checkConstraints([textOnSurface], repaired, "oklch")).toEqual([]);
   });
 });

@@ -54,7 +54,7 @@ const readPng = async (png: Uint8Array<ArrayBuffer>) => {
 
 describe("renderThemePreview", () => {
   it("PNGとして読める画像を返す", async () => {
-    const png = await renderThemePreview([bg], { "--bg": "10 20 30" }, []);
+    const png = await renderThemePreview([bg], { "--bg": "10 20 30" }, [], "rgb");
     const image = await readPng(png);
     expect(image.signature).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
     expect(image.width).toBeGreaterThan(0);
@@ -67,6 +67,7 @@ describe("renderThemePreview", () => {
       [bg, text],
       { "--bg": "10 20 30", "--text": "240 230 220" },
       [],
+      "rgb",
     );
     const image = await readPng(png);
     expect(image.pixelAt(20, 20)).toBe("10 20 30");
@@ -75,14 +76,16 @@ describe("renderThemePreview", () => {
 
   it("色以外の変数は行にならない", async () => {
     const withEnum = await readPng(
-      await renderThemePreview([bg, cornerShape], { "--bg": "10 20 30" }, []),
+      await renderThemePreview([bg, cornerShape], { "--bg": "10 20 30" }, [], "rgb"),
     );
-    const colorOnly = await readPng(await renderThemePreview([bg], { "--bg": "10 20 30" }, []));
+    const colorOnly = await readPng(
+      await renderThemePreview([bg], { "--bg": "10 20 30" }, [], "rgb"),
+    );
     expect(withEnum.height).toBe(colorOnly.height);
   });
 
   it("色として読めない値は市松模様で描かれる", async () => {
-    const image = await readPng(await renderThemePreview([bg], { "--bg": "round" }, []));
+    const image = await readPng(await renderThemePreview([bg], { "--bg": "round" }, [], "rgb"));
     expect(image.pixelAt(20, 20)).not.toBe(image.pixelAt(26, 20));
   });
 
@@ -94,14 +97,28 @@ describe("renderThemePreview", () => {
       min: 4.5,
     };
     const values = { "--bg": "10 20 30", "--text": "240 230 220" };
-    const withBand = await readPng(await renderThemePreview([bg, text], values, [constraint]));
-    const withoutBand = await readPng(await renderThemePreview([bg, text], values, []));
+    const withBand = await readPng(
+      await renderThemePreview([bg, text], values, [constraint], "rgb"),
+    );
+    const withoutBand = await readPng(await renderThemePreview([bg, text], values, [], "rgb"));
     expect(withBand.height).toBeGreaterThan(withoutBand.height);
     expect(withBand.pixelAt(18, withoutBand.height - 16 + 2)).toBe("10 20 30");
   });
 
+  it("OKLCHの値もスウォッチとして描かれる", async () => {
+    const oklchBg: ThemeVariable = {
+      name: "--bg",
+      description: "Page background color",
+      defaultValue: "0.982 0.014 70",
+    };
+    const image = await readPng(
+      await renderThemePreview([oklchBg], { "--bg": "0.205 0.012 70" }, [], "oklch"),
+    );
+    expect(image.pixelAt(20, 20)).toBe("27 22 17");
+  });
+
   it("変数も制約もなくても画像を返す", async () => {
-    const image = await readPng(await renderThemePreview([], {}, []));
+    const image = await readPng(await renderThemePreview([], {}, [], "rgb"));
     expect(image.width).toBeGreaterThan(0);
     expect(image.height).toBeGreaterThan(0);
   });

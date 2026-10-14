@@ -16,7 +16,11 @@ type AnnictWork = {
 type AnnictLibraryEntryNode = {
   work: AnnictWork;
   status: { state: string } | null;
-  nextEpisode: { number: number | null } | null;
+  nextEpisode: {
+    number: number | null;
+    numberText: string | null;
+    title: string | null;
+  } | null;
 };
 
 export type AnnictLibraryEntriesResponse = {

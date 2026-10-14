@@ -19,7 +19,7 @@ const createMcpServer = (env: Bindings): McpServer => {
     {
       title: "Annictの視聴ライブラリを取得",
       description:
-        "newtがAnnictで登録しているアニメ作品をステータス別（watching=見ている / watched=見た など）に取得します。orderByで並び替え、currentSeason=trueで今期の作品のみに絞り込めます。カーソルページングに対応しています。",
+        "newtがAnnictで登録しているアニメ作品をステータス別（watching=見ている / watched=見た など）に取得します。orderByで並び替え、currentSeason=trueで今期の作品のみに絞り込めます。カーソルページングに対応しています。nextEpisodeNumberは古い作品などでnullになることがあり、nullでも次のエピソードがある場合があります。次のエピソードの有無はnextEpisodeNumberTextで判定してください。",
       inputSchema: {
         state: z
           .enum(["watching", "watched", "wanna_watch", "on_hold", "stop_watching"])

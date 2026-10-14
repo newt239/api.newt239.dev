@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getAnnictLibraryEntries, getUnwatchedEpisodes } from "./annict";
+import { getAnnictLibraryEntries, getLibraryWorks, getUnwatchedEpisodes } from "./annict";
 
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -39,7 +39,11 @@ describe("getAnnictLibraryEntries", () => {
                   officialSiteUrl: "https://www.gochiusa.com/",
                 },
                 status: { state: "WATCHING" },
-                nextEpisode: { number: 3 },
+                nextEpisode: {
+                  number: 3,
+                  numberText: "第3話",
+                  title: "ひと目で、尋常でないもふもふだと見抜いたよ",
+                },
               },
             ],
           },
@@ -143,6 +147,73 @@ describe("getAnnictLibraryEntries", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(new Error("JSON parse error"));
 
     consoleErrorSpy.mockRestore();
+  });
+});
+
+describe("getLibraryWorks", () => {
+  const mockToken = "test_annict_token";
+
+  const libraryResponse = (nextEpisode: unknown) => ({
+    data: {
+      viewer: {
+        libraryEntries: {
+          pageInfo: { endCursor: null, hasNextPage: false },
+          nodes: [
+            {
+              work: {
+                annictId: 1234,
+                title: "ゆるゆり♪♪",
+                titleEn: null,
+                seasonName: "SUMMER",
+                seasonYear: 2012,
+                image: null,
+                episodesCount: 12,
+                watchersCount: 1000,
+                officialSiteUrl: null,
+              },
+              status: { state: "WATCHING" },
+              nextEpisode,
+            },
+          ],
+        },
+      },
+    },
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("numberがnullでもnumberTextとtitleを次のエピソードとして返す", async () => {
+    mockFetch.mockResolvedValueOnce({
+      json: vi
+        .fn()
+        .mockResolvedValue(
+          libraryResponse({ number: null, numberText: "第7話", title: "七森中☆ないしょ話" }),
+        ),
+    });
+
+    const result = await getLibraryWorks(mockToken, { state: "watching", order: "asc", first: 50 });
+
+    expect(result.works[0]).toMatchObject({
+      nextEpisodeNumber: null,
+      nextEpisodeNumberText: "第7話",
+      nextEpisodeTitle: "七森中☆ないしょ話",
+    });
+  });
+
+  it("次のエピソードがない場合は3項目ともnullを返す", async () => {
+    mockFetch.mockResolvedValueOnce({
+      json: vi.fn().mockResolvedValue(libraryResponse(null)),
+    });
+
+    const result = await getLibraryWorks(mockToken, { state: "watching", order: "asc", first: 50 });
+
+    expect(result.works[0]).toMatchObject({
+      nextEpisodeNumber: null,
+      nextEpisodeNumberText: null,
+      nextEpisodeTitle: null,
+    });
   });
 });
 

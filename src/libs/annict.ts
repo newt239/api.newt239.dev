@@ -30,6 +30,8 @@ const LIBRARY_ENTRIES_QUERY = `
           }
           nextEpisode {
             number
+            numberText
+            title
           }
         }
       }
@@ -81,6 +83,8 @@ type LibraryWork = {
   officialSiteUrl: string | null;
   state: string | null;
   nextEpisodeNumber: number | null;
+  nextEpisodeNumberText: string | null;
+  nextEpisodeTitle: string | null;
 };
 
 export type LibraryWorksResult = {
@@ -182,6 +186,8 @@ export const getLibraryWorks = async (
     officialSiteUrl: node.work.officialSiteUrl || null,
     state: node.status?.state ?? null,
     nextEpisodeNumber: node.nextEpisode?.number ?? null,
+    nextEpisodeNumberText: node.nextEpisode?.numberText ?? null,
+    nextEpisodeTitle: node.nextEpisode?.title ?? null,
   }));
 
   const works = orderBy ? sortWorks(mappedWorks, orderBy, order) : mappedWorks;

@@ -92,6 +92,11 @@ const workSchema = z.object({
   }),
   state: z.string().nullable().openapi({ example: "WATCHING" }),
   nextEpisodeNumber: z.number().nullable().openapi({ example: 3 }),
+  nextEpisodeNumberText: z.string().nullable().openapi({ example: "第3話" }),
+  nextEpisodeTitle: z
+    .string()
+    .nullable()
+    .openapi({ example: "ひと目で、尋常でないもふもふだと見抜いたよ" }),
 });
 
 const libraryResponseSchema = z.object({

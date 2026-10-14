@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getAnnictLibraryEntries } from "./annict";
+import { getAnnictLibraryEntries, getUnwatchedEpisodes } from "./annict";
 
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -143,5 +143,117 @@ describe("getAnnictLibraryEntries", () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith(new Error("JSON parse error"));
 
     consoleErrorSpy.mockRestore();
+  });
+});
+
+describe("getUnwatchedEpisodes", () => {
+  const mockToken = "test_annict_token";
+  const now = new Date("2026-10-14T12:00:00+09:00");
+
+  const program = (
+    episodeId: number,
+    startedAt: string,
+    work: { annictId: number; title: string; viewerStatusState: string },
+  ) => ({
+    startedAt,
+    channel: { name: "TOKYO MX" },
+    episode: {
+      annictId: episodeId,
+      number: episodeId,
+      numberText: `第${episodeId}話`,
+      title: null,
+    },
+    work: {
+      ...work,
+      officialSiteUrl: "",
+      image: { recommendedImageUrl: "https://example.com/rec.jpg", facebookOgImageUrl: "" },
+    },
+  });
+
+  const watching = { annictId: 1, title: "見てる作品", viewerStatusState: "WATCHING" };
+  const wannaWatch = { annictId: 2, title: "見たい作品", viewerStatusState: "WANNA_WATCH" };
+
+  const respond = (nodes: unknown[], hasNextPage = false, endCursor: string | null = null) => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        data: { viewer: { programs: { pageInfo: { endCursor, hasNextPage }, nodes } } },
+      }),
+    });
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("放送済み・見てる・重複なしのエピソードだけを作品ごとに返す", async () => {
+    respond([
+      program(11, "2026-10-01T22:00:00+09:00", watching),
+      program(21, "2026-10-02T22:00:00+09:00", wannaWatch),
+      program(11, "2026-10-05T22:00:00+09:00", watching),
+      program(12, "2026-10-08T22:00:00+09:00", watching),
+      program(13, "2026-10-15T22:00:00+09:00", watching),
+    ]);
+
+    const result = await getUnwatchedEpisodes(mockToken, now);
+
+    expect(result).toEqual({
+      totalCount: 2,
+      works: [
+        {
+          annictId: 1,
+          title: "見てる作品",
+          officialSiteUrl: null,
+          imageUrl: "https://example.com/rec.jpg",
+          channelName: "TOKYO MX",
+          episodes: [
+            {
+              annictId: 11,
+              number: 11,
+              numberText: "第11話",
+              title: null,
+              startedAt: "2026-10-01T22:00:00+09:00",
+            },
+            {
+              annictId: 12,
+              number: 12,
+              numberText: "第12話",
+              title: null,
+              startedAt: "2026-10-08T22:00:00+09:00",
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("未放送の枠に達するまで次のページを取得する", async () => {
+    respond([program(11, "2026-10-01T22:00:00+09:00", watching)], true, "cursor1");
+    respond([program(12, "2026-10-08T22:00:00+09:00", watching)], true, "cursor2");
+    respond([program(13, "2026-10-20T22:00:00+09:00", watching)], true, "cursor3");
+
+    const result = await getUnwatchedEpisodes(mockToken, now);
+
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+    expect(JSON.parse(mockFetch.mock.calls[1][1].body).variables).toEqual({
+      first: 100,
+      after: "cursor1",
+    });
+    expect(result.totalCount).toBe(2);
+  });
+
+  it("Annict APIがエラーを返した場合は例外を投げる", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ errors: [{ message: "Unauthorized" }] }),
+    });
+
+    await expect(getUnwatchedEpisodes(mockToken, now)).rejects.toThrow("Unauthorized");
+  });
+
+  it("HTTPステータスが失敗の場合は例外を投げる", async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 500 });
+
+    await expect(getUnwatchedEpisodes(mockToken, now)).rejects.toThrow("500");
   });
 });

@@ -30,3 +30,27 @@ export type AnnictLibraryEntriesResponse = {
   };
   errors?: Array<{ message: string }>;
 };
+
+type AnnictProgramNode = {
+  startedAt: string;
+  channel: { name: string };
+  episode: {
+    annictId: number;
+    number: number | null;
+    numberText: string | null;
+    title: string | null;
+  };
+  work: AnnictWork & { viewerStatusState: string | null };
+};
+
+export type AnnictProgramsResponse = {
+  data?: {
+    viewer: {
+      programs: {
+        pageInfo: { endCursor: string | null; hasNextPage: boolean };
+        nodes: AnnictProgramNode[];
+      };
+    } | null;
+  };
+  errors?: Array<{ message: string }>;
+};

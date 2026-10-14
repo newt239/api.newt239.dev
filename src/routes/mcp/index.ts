@@ -3,7 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { getLibraryWorks } from "~/libs/annict";
+import { getLibraryWorks, getUnwatchedEpisodes } from "~/libs/annict";
 import { getMyTopTracks } from "~/libs/spotify";
 
 import type { Bindings } from "~/types/bindings";
@@ -59,6 +59,21 @@ const createMcpServer = (env: Bindings): McpServer => {
         first,
         after,
       });
+      return {
+        content: [{ type: "text", text: JSON.stringify(result) }],
+      };
+    },
+  );
+
+  server.registerTool(
+    "annict_unwatched_episodes",
+    {
+      title: "Annictの放送済み未視聴エピソードを取得",
+      description:
+        "newtがAnnictで「見てる」に登録している作品のうち、放送済みでまだ見ていないエピソードを作品ごとにまとめて返します。「今見終わっていないアニメは？」「溜まっているアニメは？」といった質問に使います。ライブラリでチャンネルを選んでいない作品は含まれないため、その作品の次の話数はannict_libraryで確認してください。",
+    },
+    async () => {
+      const result = await getUnwatchedEpisodes(env.ANNICT_API_TOKEN);
       return {
         content: [{ type: "text", text: JSON.stringify(result) }],
       };

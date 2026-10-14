@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 
 import generateThemeRoute from "~/routes/ai/generate-theme";
 import libraryRoute from "~/routes/annict/library";
+import unwatchedEpisodesRoute from "~/routes/annict/unwatched-episodes";
 import commandsRoute from "~/routes/discord/commands";
 import interactionsRoute from "~/routes/discord/interactions";
 import messagesRoute from "~/routes/discord/messages";
@@ -53,6 +54,7 @@ app.route("/discord/channels", messagesRoute);
 // AI routes
 app.route("/ai/generate-theme", generateThemeRoute);
 app.route("/annict/library", libraryRoute);
+app.route("/annict/unwatched-episodes", unwatchedEpisodesRoute);
 // Docswell route
 app.route("/docswell/slides", docswellSlidesRoute);
 // Lab routes

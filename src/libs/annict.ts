@@ -1,4 +1,4 @@
-import type { AnnictLibraryEntriesResponse } from "~/types/annict";
+import type { AnnictLibraryEntriesResponse, AnnictProgramsResponse } from "~/types/annict";
 
 const ANNICT_GRAPHQL_ENDPOINT = "https://api.annict.com/graphql";
 
@@ -187,4 +187,141 @@ export const getLibraryWorks = async (
   const works = orderBy ? sortWorks(mappedWorks, orderBy, order) : mappedWorks;
 
   return { works, pageInfo };
+};
+
+const UNWATCHED_PROGRAMS_QUERY = `
+  query UnwatchedPrograms($first: Int, $after: String) {
+    viewer {
+      programs(
+        unwatched: true
+        orderBy: { field: STARTED_AT, direction: ASC }
+        first: $first
+        after: $after
+      ) {
+        pageInfo {
+          endCursor
+          hasNextPage
+        }
+        nodes {
+          startedAt
+          channel {
+            name
+          }
+          episode {
+            annictId
+            number
+            numberText
+            title
+          }
+          work {
+            annictId
+            title
+            officialSiteUrl
+            viewerStatusState
+            image {
+              recommendedImageUrl
+              facebookOgImageUrl
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+const PROGRAMS_PAGE_SIZE = 100;
+const PROGRAMS_MAX_PAGES = 5;
+
+type UnwatchedEpisode = {
+  annictId: number;
+  number: number | null;
+  numberText: string | null;
+  title: string | null;
+  startedAt: string;
+};
+
+type UnwatchedWork = {
+  annictId: number;
+  title: string;
+  officialSiteUrl: string | null;
+  imageUrl: string | null;
+  channelName: string;
+  episodes: UnwatchedEpisode[];
+};
+
+export type UnwatchedEpisodesResult = {
+  totalCount: number;
+  works: UnwatchedWork[];
+};
+
+export const getUnwatchedEpisodes = async (
+  token: string,
+  now: Date = new Date(),
+): Promise<UnwatchedEpisodesResult> => {
+  const works = new Map<number, UnwatchedWork>();
+  const seenEpisodeIds = new Set<number>();
+  let after: string | null = null;
+
+  for (let page = 0; page < PROGRAMS_MAX_PAGES; page++) {
+    const res = await fetch(ANNICT_GRAPHQL_ENDPOINT, {
+      method: "POST",
+      headers: {
+        Authorization: `bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query: UNWATCHED_PROGRAMS_QUERY,
+        variables: { first: PROGRAMS_PAGE_SIZE, after },
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(`Annict APIの呼び出しに失敗しました: ${res.status}`);
+    }
+    const result = (await res.json()) as AnnictProgramsResponse;
+    if (result.errors || !result.data?.viewer) {
+      throw new Error(
+        `Annict APIがエラーを返しました: ${result.errors?.map((e) => e.message).join(", ") ?? "viewerが空です"}`,
+      );
+    }
+
+    const { nodes, pageInfo } = result.data.viewer.programs;
+    let reachedFuture = false;
+
+    for (const node of nodes) {
+      if (new Date(node.startedAt).getTime() > now.getTime()) {
+        reachedFuture = true;
+        break;
+      }
+      if (node.work.viewerStatusState !== "WATCHING" || seenEpisodeIds.has(node.episode.annictId)) {
+        continue;
+      }
+      seenEpisodeIds.add(node.episode.annictId);
+
+      const work = works.get(node.work.annictId) ?? {
+        annictId: node.work.annictId,
+        title: node.work.title,
+        officialSiteUrl: node.work.officialSiteUrl || null,
+        imageUrl:
+          node.work.image?.facebookOgImageUrl || node.work.image?.recommendedImageUrl || null,
+        channelName: node.channel.name,
+        episodes: [],
+      };
+      work.episodes.push({
+        annictId: node.episode.annictId,
+        number: node.episode.number,
+        numberText: node.episode.numberText,
+        title: node.episode.title,
+        startedAt: node.startedAt,
+      });
+      works.set(node.work.annictId, work);
+    }
+
+    if (reachedFuture || !pageInfo.hasNextPage) break;
+    after = pageInfo.endCursor;
+  }
+
+  return {
+    totalCount: seenEpisodeIds.size,
+    works: [...works.values()],
+  };
 };

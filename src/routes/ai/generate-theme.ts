@@ -15,8 +15,6 @@ import { renderThemePreview } from "~/libs/theme-preview";
 
 import type { Bindings } from "~/types/bindings";
 
-const MAX_ATTEMPTS = 3;
-
 const themeVariableSchema = z.object({
   name: z.string().openapi({
     example: "--color-text",
@@ -81,8 +79,7 @@ const generateThemeSchema = z.object({
     description: "生成するCSS変数の定義。指定しない場合はデフォルトの変数セットが使用されます。",
   }),
   constraints: z.array(themeConstraintSchema).optional().openapi({
-    description:
-      "守るべき色の組み合わせ。違反した場合は違反内容を伝えて再生成させ、それでも直らなければ決定的に補正します。",
+    description: "守るべき色の組み合わせ。違反した場合は決定的に補正します。",
   }),
   colorFormat: z.enum(["rgb", "oklch"]).default("rgb").openapi({
     example: "oklch",
@@ -195,87 +192,69 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
     .join(" / ");
 
   try {
-    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      { role: "system", content: buildSystemPrompt(variables, colorFormat, rules) },
-      { role: "user", content: prompt },
-    ];
-    let content = "";
-    let values: Record<string, string> = {};
-    let violations: string[] = [];
-    let attempts = 0;
+    const completion = await openai.chat.completions.create({
+      model: "gpt-6-luna",
+      service_tier: "priority",
+      messages: [
+        { role: "system", content: buildSystemPrompt(variables, colorFormat, rules) },
+        { role: "user", content: prompt },
+      ],
+      response_format: buildResponseFormat(variables),
+      reasoning_effort: "none",
+    });
+    const content = completion.choices[0].message.content;
+    if (!content) {
+      throw new Error("Failed to generate theme.");
+    }
+    const values = validateThemeValues(variables, JSON.parse(content), colorFormat);
+    const violations = checkConstraints(rules, values, colorFormat);
+    const parsedContent =
+      violations.length === 0 ? values : repairConstraints(rules, values, colorFormat);
 
-    while (attempts < MAX_ATTEMPTS) {
-      attempts++;
-      const completion = await openai.chat.completions.create({
-        model: "gpt-5.6-luna",
-        messages,
-        response_format: buildResponseFormat(variables),
-      });
-      const message = completion.choices[0].message.content;
-      if (!message) {
-        throw new Error("Failed to generate theme.");
-      }
-      content = message;
-      values = validateThemeValues(variables, JSON.parse(message), colorFormat);
-      violations = checkConstraints(rules, values, colorFormat);
-      if (violations.length === 0) {
-        break;
-      }
-      messages.push(
-        { role: "assistant", content: message },
-        {
-          role: "user",
-          content: `That theme breaks the readability rules:\n${violations.map((violation) => `- ${violation}`).join("\n")}\n\nReturn the whole JSON again. Keep the same mood and keep every value that already passes, but fix the colors listed above.`,
+    const record = async () => {
+      await c.env.DB.prepare("INSERT INTO themes (prompt, response) VALUES (?, ?)")
+        .bind(prompt, content)
+        .run();
+      const preview = await renderThemePreview(variables, parsedContent, rules, colorFormat).catch(
+        (error) => {
+          console.error(error);
+          return null;
         },
       );
-    }
-
-    const repaired =
-      violations.length === 0 ? values : repairConstraints(rules, values, colorFormat);
-    // 結果をd1に保存
-    await c.env.DB.prepare("INSERT INTO themes (prompt, response) VALUES (?, ?)")
-      .bind(prompt, content)
-      .run();
-    const parsedContent = repaired;
-    // ディスコードに通知
-    const preview = await renderThemePreview(variables, parsedContent, rules, colorFormat).catch(
-      (error) => {
-        console.error(error);
-        return null;
-      },
-    );
-    const nonColorValues = Object.fromEntries(
-      variables
-        .filter((variable) => variable.kind === "number" || variable.kind === "enum")
-        .map((variable) => [variable.name, parsedContent[variable.name]]),
-    );
-    const notification = new FormData();
-    notification.append(
-      "payload_json",
-      JSON.stringify({
-        username: "portfolio",
-        avatar_url: "https://newt239.dev/logo.png",
-        attachments: preview ? [{ id: 0, filename: "theme.png" }] : undefined,
-        embeds: [
-          {
-            title: "New Theme Generated",
-            description: `Prompt: \`\`${prompt}\`\`\n\nAttempts: ${attempts}/${MAX_ATTEMPTS}${violations.length === 0 ? "" : `\nRepaired after unmet rules:\n${violations.map((violation) => `- ${violation}`).join("\n")}`}${Object.keys(nonColorValues).length === 0 ? "" : `\n\nResponse:\n\`\`\`json\n${JSON.stringify(nonColorValues, null, "\t")}\n\`\`\``}`,
-            image: preview ? { url: "attachment://theme.png" } : undefined,
-            fields: client ? [{ name: "Client", value: client }] : undefined,
-            timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
-            color: 2664261,
-            footer: {
-              text: "© 2022-2025 newt",
-              icon_url: "https://newt239.dev/logo.png",
+      const nonColorValues = Object.fromEntries(
+        variables
+          .filter((variable) => variable.kind === "number" || variable.kind === "enum")
+          .map((variable) => [variable.name, parsedContent[variable.name]]),
+      );
+      const notification = new FormData();
+      notification.append(
+        "payload_json",
+        JSON.stringify({
+          username: "portfolio",
+          avatar_url: "https://newt239.dev/logo.png",
+          attachments: preview ? [{ id: 0, filename: "theme.png" }] : undefined,
+          embeds: [
+            {
+              title: "New Theme Generated",
+              description: `Prompt: \`\`${prompt}\`\`${violations.length === 0 ? "" : `\n\nRepaired after unmet rules:\n${violations.map((violation) => `- ${violation}`).join("\n")}`}${Object.keys(nonColorValues).length === 0 ? "" : `\n\nResponse:\n\`\`\`json\n${JSON.stringify(nonColorValues, null, "\t")}\n\`\`\``}`,
+              image: preview ? { url: "attachment://theme.png" } : undefined,
+              fields: client ? [{ name: "Client", value: client }] : undefined,
+              timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
+              color: 2664261,
+              footer: {
+                text: `© ${dayjs().year()} newt`,
+                icon_url: "https://newt239.dev/logo.png",
+              },
             },
-          },
-        ],
-      }),
-    );
-    if (preview) {
-      notification.append("files[0]", new Blob([preview], { type: "image/png" }), "theme.png");
-    }
-    await fetch(DISCORD_WEBHOOK, { method: "POST", body: notification });
+          ],
+        }),
+      );
+      if (preview) {
+        notification.append("files[0]", new Blob([preview], { type: "image/png" }), "theme.png");
+      }
+      await fetch(DISCORD_WEBHOOK, { method: "POST", body: notification });
+    };
+    c.executionCtx.waitUntil(record());
     return c.json(
       {
         type: "success",
@@ -290,29 +269,31 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
   } catch (error) {
     console.error(error);
     // エラー通知
-    await fetch(DISCORD_WEBHOOK, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        username: "portfolio",
-        avatar_url: "https://newt239.dev/logo.png",
-        embeds: [
-          {
-            title: (error as APIError).code || "Unknown Error",
-            description: (error as APIError).message,
-            fields: client ? [{ name: "Client", value: client }] : undefined,
-            timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
-            color: 16711680,
-            footer: {
-              text: "© 2022-2025 newt",
-              icon_url: "https://newt239.dev/logo.png",
+    c.executionCtx.waitUntil(
+      fetch(DISCORD_WEBHOOK, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: "portfolio",
+          avatar_url: "https://newt239.dev/logo.png",
+          embeds: [
+            {
+              title: (error as APIError).code || "Unknown Error",
+              description: (error as APIError).message,
+              fields: client ? [{ name: "Client", value: client }] : undefined,
+              timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
+              color: 16711680,
+              footer: {
+                text: `© ${dayjs().year()} newt`,
+                icon_url: "https://newt239.dev/logo.png",
+              },
             },
-          },
-        ],
+          ],
+        }),
       }),
-    });
+    );
     return c.json({ type: "error", error: error as object }, 400);
   }
 });

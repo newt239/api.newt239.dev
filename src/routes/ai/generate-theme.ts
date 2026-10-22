@@ -242,7 +242,7 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
               timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
               color: 2664261,
               footer: {
-                text: "© 2022-2025 newt",
+                text: `© ${dayjs().year()} newt`,
                 icon_url: "https://newt239.dev/logo.png",
               },
             },
@@ -286,7 +286,7 @@ const app = new OpenAPIHono<{ Bindings: Bindings }>().openapi(route, async (c) =
               timestamp: dayjs().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
               color: 16711680,
               footer: {
-                text: "© 2022-2025 newt",
+                text: `© ${dayjs().year()} newt`,
                 icon_url: "https://newt239.dev/logo.png",
               },
             },

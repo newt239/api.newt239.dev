@@ -17,30 +17,30 @@
   "dependencies": {
     "@hono/mcp": "0.3.2",
     "@hono/swagger-ui": "0.6.1",
-    "@hono/zod-openapi": "1.6.2",
-    "@modelcontextprotocol/sdk": "1.30.0",
+    "@hono/zod-openapi": "1.6.3",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@spotify/web-api-ts-sdk": "1.2.0",
     "culori": "4.0.2",
     "dayjs": "1.11.23",
     "discord-interactions": "4.4.0",
-    "fast-xml-parser": "5.11.1",
-    "hono": "4.13.5",
-    "openai": "7.10.0",
-    "zod": "4.5.4"
+    "fast-xml-parser": "5.11.2",
+    "hono": "4.13.13",
+    "openai": "7.43.0",
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/vitest-plugin": "1.1.4",
-    "@cloudflare/workers-types": "5.20260903.1",
+    "@cloudflare/vitest-plugin": "1.4.7",
+    "@cloudflare/workers-types": "5.20261024.1",
     "@types/culori": "4.0.1",
-    "@types/node": "26.4.1",
-    "discord-api-types": "0.38.55",
-    "knip": "6.34.0",
-    "oxfmt": "0.66.0",
-    "oxlint": "1.81.0",
-    "oxlint-tsgolint": "7.0.2001",
+    "@types/node": "26.6.5",
+    "discord-api-types": "0.38.57",
+    "knip": "6.43.0",
+    "oxfmt": "0.74.0",
+    "oxlint": "1.89.0",
+    "oxlint-tsgolint": "7.0.2005",
     "typescript": "7.0.2",
-    "vitest": "4.1.11",
-    "wrangler": "4.129.0"
+    "vitest": "4.1.12",
+    "wrangler": "4.152.0"
   },
   "devEngines": {
     "runtime": {
